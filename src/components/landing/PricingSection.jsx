@@ -146,7 +146,7 @@ export default function PricingSection() {
         </div>
 
         {/* Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
           {PLANS.map((plan) => {
             const Icon = plan.icon;
             return (
@@ -154,7 +154,7 @@ export default function PricingSection() {
                 key={plan.id}
                 className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
                   plan.popular
-                    ? 'bg-white shadow-2xl shadow-indigo-900/50 scale-105 ring-2 ring-indigo-500'
+                    ? 'bg-white shadow-2xl shadow-indigo-900/50 lg:scale-105 ring-2 ring-indigo-500'
                     : 'bg-slate-800/60 border border-white/10 hover:border-white/20'
                 }`}
               >

@@ -53,8 +53,8 @@ export default function HeroSection() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left — Text */}
-          <div className="flex flex-col gap-7">
-            <Badge className="w-fit bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30 px-4 py-1.5 text-sm font-medium gap-2">
+          <div className="flex flex-col gap-7 text-center lg:text-left">
+            <Badge className="w-fit mx-auto lg:mx-0 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30 px-4 py-1.5 text-sm font-medium gap-2">
               <Star className="w-3.5 h-3.5 fill-indigo-400 text-indigo-400" />
               Trusted by 500+ Schools Across Pakistan
             </Badge>
@@ -71,7 +71,7 @@ export default function HeroSection() {
               </p>
             </div>
 
-            <ul className="flex flex-wrap gap-4">
+            <ul className="flex flex-wrap gap-4 justify-center lg:justify-start">
               {HERO_BULLETS.map((b) => (
                 <li key={b} className="flex items-center gap-2 text-sm text-slate-300">
                   <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -80,7 +80,7 @@ export default function HeroSection() {
               ))}
             </ul>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
               <Link href="/login">
                 <Button size="lg" className="bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white shadow-xl shadow-indigo-900/50 font-semibold text-base px-8 gap-2 transition-all hover:scale-105">
                   Get Started Free
@@ -94,7 +94,7 @@ export default function HeroSection() {
             </div>
 
             {/* Social proof */}
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3 pt-2 justify-center lg:justify-start">
               <div className="flex -space-x-2">
                 {['bg-indigo-500', 'bg-violet-500', 'bg-cyan-500', 'bg-emerald-500', 'bg-rose-500'].map((c, i) => (
                   <div key={i} className={`w-8 h-8 rounded-full ${c} border-2 border-slate-950 flex items-center justify-center text-white text-xs font-bold`}>

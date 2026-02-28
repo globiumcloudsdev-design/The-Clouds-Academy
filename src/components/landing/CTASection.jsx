@@ -68,7 +68,7 @@ export default function CTASection() {
             </div>
 
             {/* Contact row */}
-            <div className="flex items-center justify-center gap-6 mt-8 pt-6 border-t border-white/10">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-8 pt-6 border-t border-white/10">
               <a href="tel:+923001234567" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm">
                 <Phone className="w-4 h-4" />
                 +92 300 123 4567

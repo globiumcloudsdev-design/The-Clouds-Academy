@@ -263,9 +263,36 @@ export default function ModulesSection() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 items-start">
-          {/* Module selector */}
-          <div className="flex flex-col gap-2">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 lg:gap-8 lg:items-start gap-4">
+
+          {/* ── Mobile / Tablet: horizontal scroll chips ── */}
+          <div className="lg:hidden -mx-4 px-4 overflow-x-auto pb-2">
+            <div className="flex gap-2 w-max">
+              {MODULES.map((m) => {
+                const MIcon = m.icon;
+                const isActive = m.id === active;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setActive(m.id)}
+                    className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${
+                      isActive
+                        ? `bg-gradient-to-r ${m.gradient} text-white border-transparent shadow-md`
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-white/20' : m.bg}`}>
+                      <MIcon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : m.ic}`} />
+                    </div>
+                    {m.title}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Desktop: vertical sidebar ── */}
+          <div className="hidden lg:flex flex-col gap-2">
             {MODULES.map((m) => {
               const MIcon = m.icon;
               const isActive = m.id === active;
@@ -297,15 +324,15 @@ export default function ModulesSection() {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-lg overflow-hidden">
               {/* Header */}
               <div className={`bg-gradient-to-r ${mod.gradient} p-6`}>
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                <div className="flex flex-wrap items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-6 h-6 text-white" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <h3 className="text-xl font-bold text-white">{mod.title}</h3>
                     <p className="text-sm text-white/80 mt-0.5">{mod.tagline}</p>
                   </div>
-                  <div className="text-right bg-white/15 rounded-xl px-4 py-2">
+                  <div className="text-right bg-white/15 rounded-xl px-4 py-2 flex-shrink-0">
                     <p className="text-2xl font-extrabold text-white">{mod.preview.label}</p>
                     <p className="text-xs text-white/75">{mod.preview.sublabel}</p>
                     <p className="text-xs text-white/60 mt-0.5">{mod.preview.trend}</p>
@@ -325,7 +352,7 @@ export default function ModulesSection() {
                   ))}
                 </div>
 
-                <div className="mt-6 pt-5 border-t border-slate-100 flex items-center gap-3">
+                <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center gap-3">
                   <Link href="/login">
                     <Button className={`bg-gradient-to-r ${mod.gradient} text-white hover:opacity-90 font-semibold gap-2`}>
                       Explore {mod.title}

@@ -46,9 +46,9 @@ export default function Footer() {
     <footer className="bg-slate-950 border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top section */}
-        <div className="py-14 grid grid-cols-1 lg:grid-cols-5 gap-10">
+        <div className="py-14 grid grid-cols-2 gap-8 sm:grid-cols-4 lg:grid-cols-5 lg:gap-10">
           {/* Brand */}
-          <div className="lg:col-span-1">
+          <div className="col-span-2 sm:col-span-4 lg:col-span-1">
             <Link href="/" className="flex items-center gap-2.5 group mb-5">
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg">
                 <GraduationCap className="w-5 h-5 text-white" />
