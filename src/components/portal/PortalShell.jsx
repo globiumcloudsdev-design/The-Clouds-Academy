@@ -24,7 +24,7 @@ const PARENT_NAV = [
 const STUDENT_NAV = [
   { label: 'Overview',       href: '/student',               icon: LayoutDashboard },
   { label: 'My Attendance',  href: '/student/attendance',    icon: Calendar },
-  { label: 'My Fees',        href: '/student/fees',          icon: DollarSign },
+  // { label: 'My Fees',        href: '/student/fees',          icon: DollarSign },
   { label: 'My Exams',       href: '/student/exams',         icon: BookOpen },
   { label: 'Timetable',      href: '/student/timetable',     icon: Clock },
   { label: 'Announcements',  href: '/student/announcements', icon: Bell },

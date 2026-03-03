@@ -6,7 +6,16 @@
 export { authService }          from './authService';
 export { studentService }       from './studentService';
 export { teacherService }       from './teacherService';
-export { classService, sectionService } from './classService';
+export { classService }             from './classService';
+export { sectionService }           from './sectionService';
+export { admissionService }         from './admissionService';
+export { parentService }            from './parentService';
+export { timetableService }         from './timetableService';
+export { feeTemplateService }       from './feeTemplateService';
+export { payrollService }           from './payrollService';
+export { noticeService }            from './noticeService';
+export { staffAttendanceService }   from './staffAttendanceService';
+export { reportService }            from './reportService';
 export { attendanceService }    from './attendanceService';
 export { examService }          from './examService';
 export { feeService }           from './feeService';

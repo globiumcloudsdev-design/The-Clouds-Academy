@@ -10,10 +10,10 @@ import { NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/', '/login', '/portal-login', '/forgot-password', '/reset-password'];
 
-// Portal route prefixes
-const PARENT_PATHS  = ['/parent'];
-const STUDENT_PATHS = ['/student'];
-const TEACHER_PATHS = ['/teacher'];
+// Portal route prefixes (must use trailing /  to avoid matching /students, /teachers)
+const PARENT_PATHS  = ['/parent/'];
+const STUDENT_PATHS = ['/student/'];
+const TEACHER_PATHS = ['/teacher/'];
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
@@ -28,6 +28,7 @@ export function middleware(request) {
   }
 
   // ── Portal route guards ─────────────────────────────────────────
+  // Match /parent/*, /student/*, /teacher/* but NOT /parents, /students, /teachers (staff management)
   const isParentRoute  = PARENT_PATHS.some((p) => pathname.startsWith(p));
   const isStudentRoute = STUDENT_PATHS.some((p) => pathname.startsWith(p));
   const isTeacherRoute = TEACHER_PATHS.some((p) => pathname.startsWith(p));

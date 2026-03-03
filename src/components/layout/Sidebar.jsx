@@ -1,6 +1,7 @@
 /**
  * School portal sidebar
  * Reads SCHOOL_NAV from constants and filters items based on user permissions.
+ * Supports group headings via item.group property.
  */
 'use client';
 
@@ -10,7 +11,8 @@ import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen,
   ClipboardList, CalendarCheck, FileText, DollarSign,
-  Settings, ShieldCheck, Calendar, X, CreditCard, UserCog, GitBranch,
+  Settings, ShieldCheck, Calendar, CalendarDays, X, CreditCard,
+  UserCog, GitBranch, Layers, Bell, BarChart2,
 } from 'lucide-react';
 
 import { SCHOOL_NAV } from '@/constants';
@@ -20,16 +22,17 @@ import { cn } from '@/lib/utils';
 
 const ICON_MAP = {
   LayoutDashboard, Users, GraduationCap, BookOpen,
-  ClipboardList, CalendarCheck, FileText, DollarSign,
+  ClipboardList, CalendarCheck, CalendarDays, FileText, DollarSign,
   Settings, ShieldCheck, Calendar, CreditCard, UserCog, GitBranch,
+  Layers, Bell, BarChart2,
 };
 
 export default function Sidebar() {
-  const pathname    = usePathname();
-  const isMaster    = useAuthStore((s) => s.isMasterAdmin());
-  const canDo       = useAuthStore((s) => s.canDo);
-  const roleCode    = useAuthStore((s) => s.user?.role_code);
-  const sidebarOpen = useUiStore((s) => s.sidebarOpen);
+  const pathname      = usePathname();
+  const isMaster      = useAuthStore((s) => s.isMasterAdmin());
+  const canDo         = useAuthStore((s) => s.canDo);
+  const roleCode      = useAuthStore((s) => s.user?.role_code);
+  const sidebarOpen   = useUiStore((s) => s.sidebarOpen);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const [mounted, setMounted] = useState(false);
 
@@ -40,15 +43,23 @@ export default function Sidebar() {
   const visibleItems = !mounted
     ? SCHOOL_NAV
     : SCHOOL_NAV.filter((item) => {
-        if (!item.permission) return true;   // always visible (Dashboard)
-        if (isMaster) return true;           // Master Admin sees everything
-        if (item.hideForRoles?.includes(roleCode)) return false; // role-level hide
+        if (!item.permission) return true;           // always visible (Dashboard)
+        if (isMaster) return true;                   // Master Admin sees everything
+        if (item.hideForRoles?.includes(roleCode)) return false;
         return canDo(item.permission);
       });
 
+  // Group items by their `group` property preserving insert order
+  const grouped = visibleItems.reduce((acc, item) => {
+    const key = item.group ?? '__none__';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+
   return (
     <>
-      {/* ── Mobile overlay — tap to close sidebar ── */}
+      {/* ── Mobile overlay ── */}
       {mounted && sidebarOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/50 md:hidden"
@@ -75,29 +86,40 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {visibleItems.map((item) => {
-            const Icon   = ICON_MAP[item.icon] || LayoutDashboard;
-            const active = pathname === item.href || pathname.startsWith(item.href + '/');
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
+          {Object.entries(grouped).map(([group, items]) => (
+            <div key={group} className="mb-1">
+              {/* Group label — skip for ungrouped (null group) items */}
+              {group !== '__none__' && (
+                <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-white/40 select-none">
+                  {group}
+                </p>
+              )}
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => { if (sidebarOpen) toggleSidebar(); }}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  active
-                    ? 'bg-[hsl(var(--sidebar-accent))] text-white'
-                    : 'text-white/70 hover:bg-[hsl(var(--sidebar-accent))] hover:text-white',
-                )}
-              >
-                <Icon size={18} />
-                {item.label}
-              </Link>
-            );
-          })}
+              {items.map((item) => {
+                const Icon   = ICON_MAP[item.icon] || LayoutDashboard;
+                const active = pathname === item.href || pathname.startsWith(item.href + '/');
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => { if (sidebarOpen) toggleSidebar(); }}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      active
+                        ? 'bg-[hsl(var(--sidebar-accent))] text-white'
+                        : 'text-white/70 hover:bg-white/10 hover:text-white',
+                    )}
+                  >
+                    <Icon size={16} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
       </aside>
     </>
