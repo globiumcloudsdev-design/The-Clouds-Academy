@@ -17,12 +17,12 @@ export default function MasterAdminDashboard() {
     <div className="space-y-6">
       <PageHeader
         title="Platform Overview"
-        description="Dashboard for all schools across The Clouds Academy network"
+        description="Dashboard for all institutes across The Clouds Academy network"
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          label="Total Schools"
+          label="Total Institutes"
           value={stats?.total_schools ?? '—'}
           icon={<Building2 size={18} />}
           loading={isLoading}

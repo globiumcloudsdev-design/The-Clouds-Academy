@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/master-admin',                        label: 'Dashboard',       icon: LayoutDashboard },
-  { href: '/master-admin/schools',                label: 'Schools',         icon: Building2       },
+  { href: '/master-admin/schools',                label: 'Institutes',      icon: Building2       },
   { href: '/master-admin/subscriptions',          label: 'Subscriptions',   icon: CreditCard      },
   { href: '/master-admin/subscription-templates', label: 'Sub. Templates',  icon: FileText        },
   { href: '/master-admin/users',                  label: 'Users',           icon: Users           },

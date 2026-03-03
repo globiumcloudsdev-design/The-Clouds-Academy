@@ -47,7 +47,7 @@ export default function SchoolDetailPage({ params }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['master-school', id] });
       qc.invalidateQueries({ queryKey: ['master-schools']     });
-      toast.success('School updated');
+      toast.success('Institute updated');
     },
     onError: (e) => toast.error(e?.response?.data?.message ?? 'Update failed'),
   });
@@ -56,7 +56,7 @@ export default function SchoolDetailPage({ params }) {
     mutationFn: (is_active) => toggleStatus(id, is_active),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['master-school', id] });
-      qc.invalidateQueries({ queryKey: ['master-schools']     });
+      qc.invalidateQueries({ queryKey: ['master-institutes']  });
       toast.success('Status updated');
     },
     onError: (e) => toast.error(e?.response?.data?.message ?? 'Update failed'),
@@ -66,8 +66,8 @@ export default function SchoolDetailPage({ params }) {
     values: school ? { name: school.name, has_branches: school.has_branches } : {},
   });
 
-  if (isLoading) return <PageLoader message="Loading school…" />;
-  if (error)     return <ErrorAlert message="Failed to load school data." />;
+  if (isLoading) return <PageLoader message="Loading institute…" />;
+  if (error)     return <ErrorAlert message="Failed to load institute data." />;
   if (!school)   return null;
 
   const sub = school.subscription;
@@ -76,7 +76,7 @@ export default function SchoolDetailPage({ params }) {
     <div className="space-y-6">
       <AppBreadcrumb
         items={[
-          { label: 'Schools', href: '/master-admin/schools' },
+          { label: 'Institutes', href: '/master-admin/schools' },
           { label: school.name },
         ]}
       />
@@ -109,14 +109,14 @@ export default function SchoolDetailPage({ params }) {
                 className="space-y-4"
               >
                 <InputField
-                  label="School Name"
+                  label="Institute Name"
                   name="name"
                   register={register}
                   error={errors.name}
                   required
                 />
                 <CheckboxField
-                  label="This school has multiple branches"
+                  label="This institute has multiple branches"
                   name="has_branches"
                   control={control}
                 />
@@ -183,7 +183,7 @@ export default function SchoolDetailPage({ params }) {
               >
                 {toggleMutation.isPending
                   ? 'Updating…'
-                  : school.is_active ? 'Deactivate School' : 'Activate School'}
+                  : school.is_active ? 'Deactivate Institute' : 'Activate Institute'}
               </Button>
             </CardContent>
           </Card>
@@ -194,6 +194,7 @@ export default function SchoolDetailPage({ params }) {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <Row label="Code"           value={<span className="font-mono">{school.code}</span>} />
+              <Row label="Type"           value={school.institute_type ?? '—'} />
               <Row label="Has Branches"   value={school.has_branches ? 'Yes' : 'No'} />
               <Row label="Created"        value={school.createdAt ? new Date(school.createdAt).toLocaleDateString() : '—'} />
             </CardContent>

@@ -11,10 +11,10 @@ import { Sparkles, Eye, EyeOff } from 'lucide-react';
 
 import { authService } from '@/services';
 import useAuthStore from '@/store/authStore';
-import { DUMMY_USERS } from '@/data/dummyData';
+import { DUMMY_USERS, INSTITUTE_TYPES } from '@/data/dummyData';
 
 const schema = z.object({
-  school_code: z.string().min(2, 'Enter your school code'),
+  school_code: z.string().min(2, 'Enter your institute code'),
   email:       z.string().email('Invalid email'),
   password:    z.string().min(6, 'Minimum 6 characters'),
 });
@@ -29,14 +29,34 @@ const ROLE_COLORS = {
   BRANCH_ADMIN:  { bg: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300',         dot: 'bg-teal-500'   },
 };
 
+// Institute-type colour override for SCHOOL_ADMIN users
+const INST_TYPE_COLORS = {
+  school:     { bg: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',         dot: 'bg-blue-500'   },
+  coaching:   { bg: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300', dot: 'bg-orange-500' },
+  academy:    { bg: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300', dot: 'bg-indigo-500' },
+  college:    { bg: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300',         dot: 'bg-cyan-500'   },
+  university: { bg: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300', dot: 'bg-violet-500' },
+};
+
 const ACCESS_LABELS = {
-  MASTER_ADMIN:  'All Schools',
+  MASTER_ADMIN:  'All Institutes',
   SCHOOL_ADMIN:  'Full Access',
   FEE_MANAGER:   'Fees only',
   CLASS_TEACHER: 'Class + Exams',
   RECEPTIONIST:  'Limited',
   BRANCH_ADMIN:  'Branch Mgmt',
 };
+
+// Resolve the best label + type name for a user card
+function resolveUserMeta(user) {
+  const instType = user.school?.institute_type;
+  const typeDef  = instType ? INSTITUTE_TYPES.find((t) => t.value === instType) : null;
+  const colors   = (user.role_code === 'SCHOOL_ADMIN' && instType && INST_TYPE_COLORS[instType])
+    ? INST_TYPE_COLORS[instType]
+    : (ROLE_COLORS[user.role_code] ?? { bg: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' });
+  const badge    = typeDef ? `${typeDef.icon} ${typeDef.label} Admin` : (user.role?.name ?? user.role_code);
+  return { colors, badge, typeDef };
+}
 
 export default function LoginPage() {
   const router      = useRouter();
@@ -89,7 +109,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* School Code */}
             <div>
-              <label className="mb-1 block text-sm font-medium">School Code</label>
+              <label className="mb-1 block text-sm font-medium">Institute Code</label>
               <input
                 {...register('school_code')}
                 placeholder="e.g. TCA-LHR"
@@ -169,9 +189,10 @@ export default function LoginPage() {
             </span>
           </div>
 
+            {/* ── Demo Credentials ── */}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {DUMMY_USERS.map((user) => {
-              const colors = ROLE_COLORS[user.role_code] ?? { bg: 'bg-gray-100 text-gray-700', dot: 'bg-gray-400' };
+              const { colors, badge, typeDef } = resolveUserMeta(user);
               return (
                 <button
                   key={user.id}
@@ -188,7 +209,7 @@ export default function LoginPage() {
                       </span>
                     </div>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${colors.bg}`}>
-                      {user.role?.name}
+                      {badge}
                     </span>
                   </div>
 
@@ -208,10 +229,17 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  {/* Access level */}
-                  <div className="mt-2 w-full border-t pt-1.5">
-                    <span className="text-[10px] text-muted-foreground">Access: </span>
-                    <span className="text-[10px] font-medium text-foreground/70">{ACCESS_LABELS[user.role_code] ?? '—'}</span>
+                  {/* Access level + institute type */}
+                  <div className="mt-2 w-full border-t pt-1.5 flex items-center justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground">Access: </span>
+                      <span className="text-[10px] font-medium text-foreground/70">{ACCESS_LABELS[user.role_code] ?? '—'}</span>
+                    </div>
+                    {typeDef && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {typeDef.icon} {typeDef.label}
+                      </span>
+                    )}
                   </div>
                 </button>
               );

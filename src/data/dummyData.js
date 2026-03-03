@@ -7,25 +7,84 @@
  * ╚══════════════════════════════════════════════════════════════╝
  *
  * Demo Credentials
- * ─────────────────────────────────────────────────────────────────
- *  Role          │ School Code │ Email                    │ Password
- * ───────────────┼─────────────┼──────────────────────────┼──────────────
- *  Master Admin  │ MASTER      │ master@cloudsacademy.com │ master@123
- *  School Admin  │ TCA-LHR     │ admin@tca.edu.pk         │ admin@123
- *  Fee Manager   │ TCA-LHR     │ fees@tca.edu.pk          │ fees@123
- *  Class Teacher │ TCA-LHR     │ teacher@tca.edu.pk       │ teacher@123
- *  Receptionist  │ TCA-LHR     │ reception@tca.edu.pk     │ reception@123
- *  Branch Admin  │ TCA-LHR     │ branch@tca.edu.pk        │ branch@123
- * ─────────────────────────────────────────────────────────────────
+ * ──────────────────────────────────────────────────────────────────────────────────────
+ *  Role / Type          │ Inst. Code │ Email                    │ Password
+ * ─────────────────────┼────────────┼──────────────────────────┼───────────────
+ *  Master Admin         │ MASTER     │ master@cloudsacademy.com │ master@123
+ *  Academy Admin (TCA)  │ TCA-LHR    │ admin@tca.edu.pk         │ admin@123
+ *  Fee Manager          │ TCA-LHR    │ fees@tca.edu.pk          │ fees@123
+ *  Class Teacher        │ TCA-LHR    │ teacher@tca.edu.pk       │ teacher@123
+ *  Receptionist         │ TCA-LHR    │ reception@tca.edu.pk     │ reception@123
+ *  Branch Admin         │ TCA-LHR    │ branch@tca.edu.pk        │ branch@123
+ *  Coaching Admin (SCC) │ SCC-LHR    │ admin@scc.edu.pk         │ coaching@123
+ *  Academy Admin (HIA)  │ HIA-ISL    │ admin@hia.edu.pk         │ academy@123
+ *  College Admin (PCC)  │ PCC-LHR    │ admin@pcc.edu.pk         │ college@123
+ * ──────────────────────────────────────────────────────────────────────────────────────
  */
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 0 ▸ SCHOOL
+// 0 ▸ INSTITUTE TYPES
+// ──────────────────────────────────────────────────────────────────────────────
+export const INSTITUTE_TYPES = [
+  {
+    value: 'school',
+    label: 'School',
+    icon: '🏫',
+    description: 'K-12 / O-Level / A-Level institutions',
+    extra_fields: [
+      { name: 'affiliation_board', label: 'Affiliation Board', placeholder: 'e.g. Punjab Board, Cambridge', required: false },
+      { name: 'grade_range',       label: 'Grade Range',        placeholder: 'e.g. Class 1 – 12',          required: false },
+    ],
+  },
+  {
+    value: 'coaching',
+    label: 'Coaching Center',
+    icon: '📚',
+    description: 'Subject-specific or entrance-test coaching',
+    extra_fields: [
+      { name: 'subject_focus', label: 'Subject / Focus Area', placeholder: 'e.g. Mathematics, Physics, MDCAT', required: false },
+      { name: 'target_exams', label: 'Target Exams',          placeholder: 'e.g. MDCAT, ECAT, CSS',            required: false },
+    ],
+  },
+  {
+    value: 'academy',
+    label: 'Academy',
+    icon: '🎓',
+    description: 'Skill-based or specialized training academies',
+    extra_fields: [
+      { name: 'specialization', label: 'Specialization', placeholder: 'e.g. IT, Sports, Arts, Language', required: false },
+    ],
+  },
+  {
+    value: 'college',
+    label: 'College',
+    icon: '🏛️',
+    description: 'Intermediate / Bachelors level colleges',
+    extra_fields: [
+      { name: 'affiliation_board',  label: 'Affiliation / University', placeholder: 'e.g. University of Punjab, HEC', required: false },
+      { name: 'degree_programs',    label: 'Degree Programs',           placeholder: 'e.g. FSc, FA, B.Com, BS',        required: false },
+    ],
+  },
+  {
+    value: 'university',
+    label: 'University',
+    icon: '🏗️',
+    description: 'Degree-awarding higher education institutes',
+    extra_fields: [
+      { name: 'hec_charter',  label: 'HEC Charter No.',  placeholder: 'e.g. HEC-2005-066', required: false },
+      { name: 'faculties',    label: 'Faculties / Departments', placeholder: 'e.g. Engineering, Medicine, Law', required: false },
+    ],
+  },
+];
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 0.1 ▸ INSTITUTE  (the currently logged-in school/institute)
 // ──────────────────────────────────────────────────────────────────────────────
 export const DUMMY_SCHOOL = {
   id: 'school-001',
   name: 'The Clouds Academy',
   code: 'TCA-LHR',
+  institute_type: 'academy',
   address: '12-B, Gulberg III, Lahore, Punjab',
   phone: '+92-42-35761234',
   email: 'info@tca.edu.pk',
@@ -34,6 +93,8 @@ export const DUMMY_SCHOOL = {
   has_branches: true,
   is_active: true,
   created_at: '2023-04-01T08:00:00.000Z',
+  // institute-type-specific
+  specialization: 'General Education',
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -258,6 +319,74 @@ export const DUMMY_USERS = [
   },
 ];
 
+// ── 3 demo accounts for other institute types
+export const DUMMY_COACHING_INSTITUTE = {
+  id: 'inst-006', name: 'Star Coaching Center', code: 'SCC-LHR',
+  institute_type: 'coaching', subject_focus: 'Mathematics, Physics, Chemistry',
+  target_exams: 'MDCAT, ECAT', has_branches: false, is_active: true,
+};
+export const DUMMY_ACADEMY_INSTITUTE = {
+  id: 'inst-007', name: 'Horizon IT Academy', code: 'HIA-ISL',
+  institute_type: 'academy', specialization: 'Information Technology & Programming',
+  has_branches: true, is_active: true,
+};
+export const DUMMY_COLLEGE_INSTITUTE = {
+  id: 'inst-008', name: 'Punjab College of Commerce', code: 'PCC-LHR',
+  institute_type: 'college', affiliation_board: 'University of Punjab',
+  degree_programs: 'FSc, FA, ICS, I.Com, B.Com', has_branches: true, is_active: true,
+};
+
+DUMMY_USERS.push(
+  {
+    id: 'user-009',
+    first_name: 'Khalid',
+    last_name: 'Mehmood',
+    email: 'admin@scc.edu.pk',
+    password: 'coaching@123',
+    phone: '+92-321-1230009',
+    role_code: 'SCHOOL_ADMIN',
+    is_active: true,
+    school_code: 'SCC-LHR',
+    school: DUMMY_COACHING_INSTITUTE,
+    role: DUMMY_ROLES[0],
+    permissions: ALL_PERMISSIONS,
+    avatar: null,
+    created_at: '2025-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'user-010',
+    first_name: 'Zara',
+    last_name: 'Hashmi',
+    email: 'admin@hia.edu.pk',
+    password: 'academy@123',
+    phone: '+92-333-1230010',
+    role_code: 'SCHOOL_ADMIN',
+    is_active: true,
+    school_code: 'HIA-ISL',
+    school: DUMMY_ACADEMY_INSTITUTE,
+    role: DUMMY_ROLES[0],
+    permissions: ALL_PERMISSIONS,
+    avatar: null,
+    created_at: '2025-03-20T08:00:00.000Z',
+  },
+  {
+    id: 'user-011',
+    first_name: 'Naveed',
+    last_name: 'Chaudhry',
+    email: 'admin@pcc.edu.pk',
+    password: 'college@123',
+    phone: '+92-302-1230011',
+    role_code: 'SCHOOL_ADMIN',
+    is_active: true,
+    school_code: 'PCC-LHR',
+    school: DUMMY_COLLEGE_INSTITUTE,
+    role: DUMMY_ROLES[0],
+    permissions: ALL_PERMISSIONS,
+    avatar: null,
+    created_at: '2025-05-01T08:00:00.000Z',
+  },
+);
+
 // Back-fill branch reference on user-006
 DUMMY_USERS.find((u) => u.id === 'user-006').branch = DUMMY_BRANCHES[0];
 
@@ -353,24 +482,44 @@ export const DUMMY_FEES = [
 // ──────────────────────────────────────────────────────────────────────────────
 export const DUMMY_MA_SCHOOLS = [
   {
-    id: 'school-001', name: 'The Clouds Academy',          code: 'TCA-LHR',  address: 'Gulberg III, Lahore',        has_branches: false, is_active: true,  created_at: '2023-04-01T00:00:00.000Z',
+    id: 'school-001', name: 'The Clouds Academy',           code: 'TCA-LHR',  institute_type: 'academy',  address: 'Gulberg III, Lahore',        has_branches: true,  is_active: true,  created_at: '2023-04-01T00:00:00.000Z',
     subscription: { plan: 'premium',  status: 'active', expires_at: '2026-12-31' },
+    specialization: 'General Education',
   },
   {
-    id: 'school-002', name: 'Beaconhouse Institute',        code: 'BHI-KHI',  address: 'DHA Phase 5, Karachi',       has_branches: true,  is_active: true,  created_at: '2023-07-15T00:00:00.000Z',
+    id: 'school-002', name: 'Beaconhouse School System',     code: 'BSS-KHI',  institute_type: 'school',   address: 'DHA Phase 5, Karachi',       has_branches: true,  is_active: true,  created_at: '2023-07-15T00:00:00.000Z',
     subscription: { plan: 'basic',    status: 'active', expires_at: '2026-07-14' },
+    affiliation_board: 'Federal Board', grade_range: 'Class 1 – 12',
   },
   {
-    id: 'school-003', name: 'Roots International Islamabad', code: 'RIS-ISL', address: 'F-7/1, Islamabad',           has_branches: true,  is_active: true,  created_at: '2024-01-20T00:00:00.000Z',
+    id: 'school-003', name: 'Roots International Islamabad', code: 'RIS-ISL',  institute_type: 'school',   address: 'F-7/1, Islamabad',           has_branches: true,  is_active: true,  created_at: '2024-01-20T00:00:00.000Z',
     subscription: { plan: 'standard', status: 'active', expires_at: '2026-01-19' },
+    affiliation_board: 'Cambridge CAIE', grade_range: 'O-Level / A-Level',
   },
   {
-    id: 'school-004', name: 'City Grammar School',           code: 'CGS-MUL', address: 'Model Town, Multan',         has_branches: false, is_active: false, created_at: '2024-03-10T00:00:00.000Z',
+    id: 'school-004', name: 'City Grammar School',           code: 'CGS-MUL',  institute_type: 'school',   address: 'Model Town, Multan',         has_branches: false, is_active: false, created_at: '2024-03-10T00:00:00.000Z',
     subscription: { plan: 'basic',    status: 'expired', expires_at: '2025-03-09' },
+    affiliation_board: 'Punjab Board', grade_range: 'Class 1 – 10',
   },
   {
-    id: 'school-005', name: 'Allied School Faisalabad',      code: 'ASF-FSD', address: 'Peoples Colony, Faisalabad', has_branches: false, is_active: true,  created_at: '2024-06-01T00:00:00.000Z',
+    id: 'school-005', name: 'Allied School Faisalabad',      code: 'ASF-FSD',  institute_type: 'school',   address: 'Peoples Colony, Faisalabad', has_branches: false, is_active: true,  created_at: '2024-06-01T00:00:00.000Z',
     subscription: { plan: 'standard', status: 'active', expires_at: '2026-05-31' },
+    affiliation_board: 'Punjab Board', grade_range: 'Class 1 – 12',
+  },
+  {
+    id: 'inst-006',   name: 'Star Coaching Center',          code: 'SCC-LHR',  institute_type: 'coaching', address: 'Garden Town, Lahore',        has_branches: false, is_active: true,  created_at: '2025-01-10T00:00:00.000Z',
+    subscription: { plan: 'basic',    status: 'active', expires_at: '2026-01-09' },
+    subject_focus: 'Mathematics, Physics, Chemistry', target_exams: 'MDCAT, ECAT',
+  },
+  {
+    id: 'inst-007',   name: 'Horizon IT Academy',            code: 'HIA-ISL',  institute_type: 'academy',  address: 'Blue Area, Islamabad',       has_branches: true,  is_active: true,  created_at: '2025-03-20T00:00:00.000Z',
+    subscription: { plan: 'standard', status: 'active', expires_at: '2026-03-19' },
+    specialization: 'Information Technology & Programming',
+  },
+  {
+    id: 'inst-008',   name: 'Punjab College of Commerce',    code: 'PCC-LHR',  institute_type: 'college',  address: 'Johar Town, Lahore',         has_branches: true,  is_active: true,  created_at: '2025-05-01T00:00:00.000Z',
+    subscription: { plan: 'premium',  status: 'active', expires_at: '2027-04-30' },
+    affiliation_board: 'University of Punjab', degree_programs: 'FSc, FA, ICS, I.Com, B.Com',
   },
 ];
 
@@ -381,17 +530,23 @@ export const DUMMY_MA_SUBSCRIPTIONS = [
   { id: 'sub-004', school_id: 'school-004', school: DUMMY_MA_SCHOOLS[3], plan: 'basic',    status: 'expired',   start_date: '2024-03-10', expires_at: '2025-03-09', amount: 24000  },
   { id: 'sub-005', school_id: 'school-005', school: DUMMY_MA_SCHOOLS[4], plan: 'standard', status: 'active',    start_date: '2024-06-01', expires_at: '2026-05-31', amount: 60000  },
   { id: 'sub-006', school_id: 'school-001', school: DUMMY_MA_SCHOOLS[0], plan: 'standard', status: 'cancelled', start_date: '2023-04-01', expires_at: '2024-03-31', amount: 60000  },
+  { id: 'sub-007', school_id: 'inst-006',   school: DUMMY_MA_SCHOOLS[5], plan: 'basic',    status: 'active',    start_date: '2025-01-10', expires_at: '2026-01-09', amount: 24000  },
+  { id: 'sub-008', school_id: 'inst-007',   school: DUMMY_MA_SCHOOLS[6], plan: 'standard', status: 'active',    start_date: '2025-03-20', expires_at: '2026-03-19', amount: 60000  },
+  { id: 'sub-009', school_id: 'inst-008',   school: DUMMY_MA_SCHOOLS[7], plan: 'premium',  status: 'active',    start_date: '2025-05-01', expires_at: '2027-04-30', amount: 120000 },
 ];
 
 export const DUMMY_MA_USERS = [
-  { id: 'user-master-001', first_name: 'Zahid',     last_name: 'Ali Khan',  email: 'master@cloudsacademy.com',  role: { name: 'Master Admin'  }, school: null,               is_active: true,  created_at: '2023-01-01T00:00:00.000Z' },
-  { id: 'user-002',        first_name: 'Muhammad',  last_name: 'Usman',     email: 'admin@tca.edu.pk',          role: { name: 'School Admin'  }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2023-04-01T00:00:00.000Z' },
-  { id: 'user-003',        first_name: 'Ayesha',    last_name: 'Siddiqui',  email: 'fees@tca.edu.pk',           role: { name: 'Fee Manager'   }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2023-06-15T00:00:00.000Z' },
-  { id: 'user-004',        first_name: 'Hassan',    last_name: 'Mahmood',   email: 'teacher@tca.edu.pk',        role: { name: 'Class Teacher' }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2023-08-01T00:00:00.000Z' },
-  { id: 'user-005',        first_name: 'Sarah',     last_name: 'Noor',      email: 'reception@tca.edu.pk',      role: { name: 'Receptionist'  }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2024-01-10T00:00:00.000Z' },
-  { id: 'user-006',        first_name: 'Tariq',     last_name: 'Jamil',     email: 'branch@tca.edu.pk',         role: { name: 'Branch Admin'  }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2024-03-05T00:00:00.000Z' },
-  { id: 'user-007',        first_name: 'Imran',     last_name: 'Akhtar',    email: 'principal@bhi.edu.pk',      role: { name: 'School Admin'  }, school: DUMMY_MA_SCHOOLS[1], is_active: true,  created_at: '2023-07-15T00:00:00.000Z' },
-  { id: 'user-008',        first_name: 'Samina',    last_name: 'Murtaza',   email: 'admin@ris.edu.pk',          role: { name: 'School Admin'  }, school: DUMMY_MA_SCHOOLS[2], is_active: false, created_at: '2024-01-20T00:00:00.000Z' },
+  { id: 'user-master-001', first_name: 'Zahid',     last_name: 'Ali Khan',  email: 'master@cloudsacademy.com',  role: { name: 'Master Admin'       }, school: null,               is_active: true,  created_at: '2023-01-01T00:00:00.000Z' },
+  { id: 'user-002',        first_name: 'Muhammad',  last_name: 'Usman',     email: 'admin@tca.edu.pk',          role: { name: 'Institute Admin'    }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2023-04-01T00:00:00.000Z' },
+  { id: 'user-003',        first_name: 'Ayesha',    last_name: 'Siddiqui',  email: 'fees@tca.edu.pk',           role: { name: 'Fee Manager'        }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2023-06-15T00:00:00.000Z' },
+  { id: 'user-004',        first_name: 'Hassan',    last_name: 'Mahmood',   email: 'teacher@tca.edu.pk',        role: { name: 'Class Teacher'      }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2023-08-01T00:00:00.000Z' },
+  { id: 'user-005',        first_name: 'Sarah',     last_name: 'Noor',      email: 'reception@tca.edu.pk',      role: { name: 'Receptionist'       }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2024-01-10T00:00:00.000Z' },
+  { id: 'user-006',        first_name: 'Tariq',     last_name: 'Jamil',     email: 'branch@tca.edu.pk',         role: { name: 'Branch Admin'       }, school: DUMMY_MA_SCHOOLS[0], is_active: true,  created_at: '2024-03-05T00:00:00.000Z' },
+  { id: 'user-007',        first_name: 'Imran',     last_name: 'Akhtar',    email: 'principal@bss.edu.pk',      role: { name: 'Institute Admin'    }, school: DUMMY_MA_SCHOOLS[1], is_active: true,  created_at: '2023-07-15T00:00:00.000Z' },
+  { id: 'user-008',        first_name: 'Samina',    last_name: 'Murtaza',   email: 'admin@ris.edu.pk',          role: { name: 'Institute Admin'    }, school: DUMMY_MA_SCHOOLS[2], is_active: false, created_at: '2024-01-20T00:00:00.000Z' },
+  { id: 'user-009',        first_name: 'Khalid',    last_name: 'Mehmood',   email: 'admin@scc.edu.pk',          role: { name: 'Institute Admin'    }, school: DUMMY_MA_SCHOOLS[5], is_active: true,  created_at: '2025-01-10T00:00:00.000Z' },
+  { id: 'user-010',        first_name: 'Zara',      last_name: 'Hashmi',    email: 'admin@hia.edu.pk',          role: { name: 'Institute Admin'    }, school: DUMMY_MA_SCHOOLS[6], is_active: true,  created_at: '2025-03-20T00:00:00.000Z' },
+  { id: 'user-011',        first_name: 'Naveed',    last_name: 'Chaudhry',  email: 'admin@pcc.edu.pk',          role: { name: 'Institute Admin'    }, school: DUMMY_MA_SCHOOLS[7], is_active: true,  created_at: '2025-05-01T00:00:00.000Z' },
 ];
 
 export const DUMMY_MA_STATS = {

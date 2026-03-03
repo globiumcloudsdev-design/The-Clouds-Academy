@@ -49,7 +49,8 @@ export const masterAdminService = {
       () => DUMMY_MA_SCHOOLS.find((s) => s.id === id) ?? null,
     ),
 
-  // body: { name, code, admin_email, admin_password, has_branches? }
+  // body: { institute_type, name, code, address?, admin_email, admin_password, has_branches?, subscription_template_id?,
+  //         affiliation_board?, grade_range?, subject_focus?, target_exams?, specialization?, degree_programs?, hec_charter?, faculties? }
   createSchool: (body) =>
     api.post('/master-admin/schools', body).then((r) => r.data),
 
