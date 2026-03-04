@@ -83,6 +83,18 @@ export const SECTIONS = {
 };
 
 // ─────────────────────────────────────────────────────────────────
+//  SUBJECTS
+// ─────────────────────────────────────────────────────────────────
+export const SUBJECTS = {
+  LIST:     '/subjects',              // GET    ?class_id&search&page&limit
+  CREATE:   '/subjects',              // POST   { name, code, class_id, teacher_id?, description?, is_active? }
+  BY_ID:    '/subjects/:id',          // GET
+  UPDATE:   '/subjects/:id',          // PUT
+  DELETE:   '/subjects/:id',          // DELETE (soft)
+  SYLLABUS: '/subjects/:id/syllabus', // GET / PUT  { syllabus_type, syllabus_content? } or multipart
+};
+
+// ─────────────────────────────────────────────────────────────────
 //  ACADEMIC YEARS
 // ─────────────────────────────────────────────────────────────────
 export const ACADEMIC_YEARS = {

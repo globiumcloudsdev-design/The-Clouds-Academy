@@ -11,6 +11,7 @@ export { sectionService }           from './sectionService';
 export { admissionService }         from './admissionService';
 export { parentService }            from './parentService';
 export { timetableService }         from './timetableService';
+export { subjectService }           from './subjectService';
 export { feeTemplateService }       from './feeTemplateService';
 export { payrollService }           from './payrollService';
 export { noticeService }            from './noticeService';

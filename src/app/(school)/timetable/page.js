@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { timetableService, classService, sectionService } from '@/services';
+import { timetableService, classService, sectionService, subjectService, teacherService } from '@/services';
 import useAuthStore from '@/store/authStore';
 import { PERMISSIONS, WEEK_DAYS, DEFAULT_PERIODS } from '@/constants';
 import {
@@ -69,6 +69,8 @@ export default function TimetablePage() {
   const [sectionId, setSectionId] = useState('');
   const [addOpen,   setAddOpen]   = useState(false);
   const [addSlot,   setAddSlot]   = useState({ day: '', period: '' }); // pre-fill when clicking empty cell
+  const [editOpen,  setEditOpen]  = useState(false);
+  const [editTarget,setEditTarget]= useState(null); // slot being edited
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const { data: classesData } = useQuery({
@@ -82,21 +84,40 @@ export default function TimetablePage() {
     enabled:  !!classId,
   });
 
+  const { data: subjectsData } = useQuery({
+    queryKey: ['subjects-by-class', classId],
+    queryFn:  () => subjectService.getAll({ class_id: classId, limit: 200 }),
+    enabled:  !!classId,
+  });
+
+  const { data: teachersData } = useQuery({
+    queryKey: ['teachers-all'],
+    queryFn:  () => teacherService.getAll({ limit: 200 }),
+  });
+
   const { data: ttData, isLoading } = useQuery({
     queryKey: ['timetable', classId, sectionId],
     queryFn:  () => timetableService.getByClass(classId, sectionId || undefined),
     enabled:  !!classId,
   });
 
-  const classes  = extractRows(classesData);
-  const sections = extractRows(sectionsData);
-  const slots    = extractRows(ttData);
+  const classes       = extractRows(classesData);
+  const sections      = extractRows(sectionsData);
+  const classSubjects = extractRows(subjectsData);
+  const teachers      = extractRows(teachersData);
+  const slots         = extractRows(ttData);
 
   /* build grid: grid[day][period] = slot | undefined */
   const grid = {};
   DAYS.forEach((d) => { grid[d.value] = {}; });
   slots.forEach((s) => {
     if (grid[s.day]) grid[s.day][s.period] = s;
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, body }) => timetableService.update(id, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['timetable'] }); toast.success('Slot updated'); setEditOpen(false); setEditTarget(null); },
+    onError:   (e) => toast.error(e?.response?.data?.message ?? 'Failed'),
   });
 
   const deleteMutation = useMutation({
@@ -181,17 +202,27 @@ export default function TimetablePage() {
                         {slot ? (
                           <div className={`rounded-md px-2 py-1.5 text-xs font-medium group relative ${subjectColour(slot.subject)}`}>
                             <div className="truncate max-w-[100px] mx-auto">{slot.subject}</div>
-                            {slot.teacher_name && (
-                              <div className="text-[10px] opacity-70 truncate">{slot.teacher_name}</div>
+                            {(slot.teacher_name ?? (slot.teacher ? `${slot.teacher.first_name} ${slot.teacher.last_name}` : null)) && (
+                              <div className="text-[10px] opacity-70 truncate">
+                                {slot.teacher_name ?? `${slot.teacher.first_name} ${slot.teacher.last_name}`}
+                              </div>
                             )}
-                            {canDelete && (
+                            <div className="absolute top-0.5 right-0.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
-                                onClick={() => setDeleteTarget(slot)}
-                                className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                onClick={() => { setEditTarget(slot); setEditOpen(true); }}
+                                className="text-muted-foreground hover:text-primary"
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Pencil className="w-3 h-3" />
                               </button>
-                            )}
+                              {canDelete && (
+                                <button
+                                  onClick={() => setDeleteTarget(slot)}
+                                  className="text-muted-foreground hover:text-destructive"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ) : (
                           canCreate && (
@@ -219,6 +250,9 @@ export default function TimetablePage() {
           defaultSlot={addSlot}
           classId={classId}
           sectionId={sectionId}
+          subjects={classSubjects}
+          sections={sections}
+          teachers={teachers}
           onSubmit={(body) =>
             timetableService.create(body).then(() => {
               qc.invalidateQueries({ queryKey: ['timetable'] });
@@ -227,6 +261,22 @@ export default function TimetablePage() {
             }).catch((e) => toast.error(e?.response?.data?.message ?? 'Failed'))
           }
           onCancel={() => setAddOpen(false)}
+        />
+      </AppModal>
+
+      {/* Edit slot modal */}
+      <AppModal open={editOpen} onClose={() => { setEditOpen(false); setEditTarget(null); }} title="Edit Timetable Slot">
+        <TimetableSlotForm
+          defaultSlot={editTarget ?? {}}
+          classId={classId}
+          sectionId={editTarget?.section_id ?? sectionId}
+          subjects={classSubjects}
+          sections={sections}
+          teachers={teachers}
+          isEdit
+          onSubmit={(body) => updateMutation.mutate({ id: editTarget.id, body })}
+          onCancel={() => { setEditOpen(false); setEditTarget(null); }}
+          isLoading={updateMutation.isPending}
         />
       </AppModal>
 
@@ -246,22 +296,46 @@ export default function TimetablePage() {
 }
 
 /* ─── Timetable slot form ─────────────────────────────────────── */
-function TimetableSlotForm({ defaultSlot, classId, sectionId, onSubmit, onCancel }) {
+function TimetableSlotForm({
+  defaultSlot,
+  classId,
+  sectionId,
+  subjects  = [],
+  sections  = [],
+  teachers  = [],
+  isEdit    = false,
+  onSubmit,
+  onCancel,
+  isLoading = false,
+}) {
   const { control, register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
-      day:          defaultSlot?.day    ?? '',
-      period:       defaultSlot?.period ? String(defaultSlot.period) : '',
-      subject:      '',
-      teacher_name: '',
-      room:         '',
+      day:        defaultSlot?.day     ?? '',
+      period:     defaultSlot?.period  ? String(defaultSlot.period) : '',
+      subject:    defaultSlot?.subject ?? '',
+      section_id: defaultSlot?.section_id ? String(defaultSlot.section_id) : (sectionId ? String(sectionId) : ''),
+      teacher_id: defaultSlot?.teacher_id ? String(defaultSlot.teacher_id) : '',
+      room:       defaultSlot?.room    ?? '',
     },
   });
 
-  const dayOptions    = DAYS.map((d) => ({ value: d.value, label: d.label ?? d.value }));
-  const periodOptions = PERIODS.map((p) => ({ value: String(p.period), label: p.label ?? `Period ${p.period}` }));
+  const dayOptions     = DAYS.map((d) => ({ value: d.value, label: d.label ?? d.value }));
+  const periodOptions  = PERIODS.map((p) => ({ value: String(p.period), label: p.label ?? `Period ${p.period}` }));
+  const subjectOptions = subjects.map((s) => ({ value: s.name, label: s.name }));
+  const sectionOptions = sections.map((s) => ({ value: String(s.id), label: s.name }));
+  const teacherOptions = teachers.map((t) => ({
+    value: String(t.id),
+    label: `${t.first_name} ${t.last_name}`,
+  }));
 
   const onFormSubmit = (data) => {
-    onSubmit({ ...data, period: Number(data.period), class_id: classId, section_id: sectionId });
+    const teacher = teachers.find((t) => String(t.id) === String(data.teacher_id));
+    onSubmit({
+      ...data,
+      period:       Number(data.period),
+      class_id:     classId,
+      teacher_name: teacher ? `${teacher.first_name} ${teacher.last_name}` : undefined,
+    });
   };
 
   return (
@@ -286,24 +360,58 @@ function TimetableSlotForm({ defaultSlot, classId, sectionId, onSubmit, onCancel
           required
         />
       </div>
-      <div className="space-y-1.5">
-        <Label>Subject <span className="text-destructive">*</span></Label>
-        <Input {...register('subject', { required: 'Required' })} placeholder="e.g. Mathematics" />
-        {errors.subject && <p className="text-xs text-destructive">{errors.subject.message}</p>}
-      </div>
-      <div className="grid grid-cols-2 gap-3">
+
+      {sectionOptions.length > 0 ? (
+        <SelectField
+          label="Section"
+          name="section_id"
+          control={control}
+          error={errors.section_id}
+          options={sectionOptions}
+          placeholder="Select section…"
+        />
+      ) : null}
+
+      {subjectOptions.length > 0 ? (
+        <SelectField
+          label="Subject"
+          name="subject"
+          control={control}
+          error={errors.subject}
+          options={subjectOptions}
+          placeholder="Select subject…"
+          required
+        />
+      ) : (
         <div className="space-y-1.5">
-          <Label>Teacher Name</Label>
-          <Input {...register('teacher_name')} placeholder="Teacher name" />
+          <Label>Subject <span className="text-destructive">*</span></Label>
+          <Input {...register('subject', { required: 'Required' })} placeholder="e.g. Mathematics" />
+          {errors.subject && <p className="text-xs text-destructive">{errors.subject.message}</p>}
         </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField
+          label="Teacher"
+          name="teacher_id"
+          control={control}
+          error={errors.teacher_id}
+          options={teacherOptions}
+          placeholder="Select teacher…"
+        />
         <div className="space-y-1.5">
           <Label>Room</Label>
           <Input {...register('room')} placeholder="Room no." />
         </div>
       </div>
+
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
-        <Button type="submit" size="sm">Add Slot</Button>
+        <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={isLoading}>
+          Cancel
+        </Button>
+        <Button type="submit" size="sm" disabled={isLoading}>
+          {isLoading ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Slot'}
+        </Button>
       </div>
     </form>
   );
