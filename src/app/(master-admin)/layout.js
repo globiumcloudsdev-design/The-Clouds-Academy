@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, CreditCard,
-  LogOut, FileText, Menu, X,
+  LogOut, FileText, Menu, X, ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
@@ -22,6 +22,7 @@ const NAV = [
   { href: '/master-admin/schools',                label: 'Institutes',      icon: Building2       },
   { href: '/master-admin/subscriptions',          label: 'Subscriptions',   icon: CreditCard      },
   { href: '/master-admin/subscription-templates', label: 'Sub. Templates',  icon: FileText        },
+  { href: '/master-admin/roles',                  label: 'Roles',           icon: ShieldCheck     },
   { href: '/master-admin/users',                  label: 'Users',           icon: Users           },
 ];
 

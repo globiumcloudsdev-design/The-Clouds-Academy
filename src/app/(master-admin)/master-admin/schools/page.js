@@ -117,6 +117,7 @@ export default function MasterSchoolsPage() {
   const qc      = useQueryClient();
 
   const [page,     setPage]     = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search,   setSearch]   = useState('');
   const [status,   setStatus]   = useState('');
 
@@ -126,12 +127,13 @@ export default function MasterSchoolsPage() {
   const [editTarget,    setEditTarget]    = useState(null); // school obj for edit modal
 
   const { data, isLoading } = useQuery({
-    queryKey: ['master-institutes', page, search, status],
-    queryFn:  () => fetchInstitutes({ page, search, is_active: status }),
+    queryKey: ['master-institutes', page, pageSize, search, status],
+    queryFn:  () => fetchInstitutes({ page, limit: pageSize, search, is_active: status }),
   });
 
   const institutes = data?.data?.rows ?? data?.data ?? [];
-  const totalPages = data?.data?.totalPages ?? 1;
+  const totalCount = data?.data?.total ?? institutes.length;
+  const totalPages = (data?.data?.totalPages ?? Math.ceil(totalCount / pageSize)) || 1;
 
   // ── Mutations
   const createMutation = useMutation({
@@ -201,7 +203,14 @@ export default function MasterSchoolsPage() {
             ],
           },
         ]}
-        pagination={{ page, totalPages, onPageChange: setPage }}
+        pagination={{
+          page,
+          totalPages,
+          total:            totalCount,
+          pageSize,
+          onPageChange:     (p) => setPage(p),
+          onPageSizeChange: (s) => { setPageSize(s); setPage(1); },
+        }}
       />
 
       {/* ── Create / Edit Modal ── */}

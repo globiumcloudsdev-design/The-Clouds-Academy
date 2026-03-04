@@ -13,8 +13,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 // ─── API ──────────────────────────────────────────────────
-const fetchUsers = ({ page, search }) =>
-  masterAdminService.getUsers({ page, limit: 20, search: search || undefined });
+const fetchUsers = ({ page, limit, search }) =>
+  masterAdminService.getUsers({ page, limit, search: search || undefined });
 
 // ─── Columns ──────────────────────────────────────────────
 const COLUMNS = [
@@ -78,16 +78,18 @@ const COLUMNS = [
 
 // ─── Page ─────────────────────────────────────────────────
 export default function MasterUsersPage() {
-  const [page,   setPage]   = useState(1);
-  const [search, setSearch] = useState('');
+  const [page,     setPage]     = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search,   setSearch]   = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['master-users', page, search],
-    queryFn:  () => fetchUsers({ page, search }),
+    queryKey: ['master-users', page, pageSize, search],
+    queryFn:  () => fetchUsers({ page, limit: pageSize, search }),
   });
 
   const users      = data?.data?.rows ?? data?.data ?? [];
-  const totalPages = data?.data?.totalPages ?? 1;
+  const totalCount = data?.data?.total ?? users.length;
+  const totalPages = (data?.data?.totalPages ?? Math.ceil(totalCount / pageSize)) || 1;
 
   return (
     <div className="space-y-6">
@@ -104,7 +106,15 @@ export default function MasterUsersPage() {
         search={search}
         onSearch={(v) => { setSearch(v); setPage(1); }}
         searchPlaceholder="Search by name or email…"
-        pagination={{ page, totalPages, onPageChange: setPage }}
+        enableColumnVisibility
+        pagination={{
+          page,
+          totalPages,
+          total:            totalCount,
+          pageSize,
+          onPageChange:     (p) => setPage(p),
+          onPageSizeChange: (s) => { setPageSize(s); setPage(1); },
+        }}
       />
     </div>
   );

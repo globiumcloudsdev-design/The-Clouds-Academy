@@ -109,17 +109,19 @@ export default function SubscriptionTemplatesPage() {
   const qc = useQueryClient();
 
   const [page,         setPage]        = useState(1);
+  const [pageSize,     setPageSize]    = useState(10);
   const [createOpen,   setCreateOpen]  = useState(false);
   const [editTarget,   setEditTarget]  = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sub-templates', page],
-    queryFn:  () => masterAdminService.getSubscriptionTemplates({ page, limit: 20 }),
+    queryKey: ['sub-templates', page, pageSize],
+    queryFn:  () => masterAdminService.getSubscriptionTemplates({ page, limit: pageSize }),
   });
 
   const templates  = extractRows(data);
-  const totalPages = extractPages(data);
+  const totalCount = data?.data?.total ?? templates.length;
+  const totalPages = (extractPages(data) ?? Math.ceil(totalCount / pageSize)) || 1;
 
   const createMutation = useMutation({
     mutationFn: masterAdminService.createSubscriptionTemplate,
@@ -174,7 +176,14 @@ export default function SubscriptionTemplatesPage() {
         loading={isLoading}
         emptyMessage="No subscription templates found"
         enableColumnVisibility
-        pagination={{ page, totalPages, onPageChange: setPage }}
+        pagination={{
+          page,
+          totalPages,
+          total:            totalCount,
+          pageSize,
+          onPageChange:     (p) => setPage(p),
+          onPageSizeChange: (s) => { setPageSize(s); setPage(1); },
+        }}
       />
 
       {/* Create Modal */}

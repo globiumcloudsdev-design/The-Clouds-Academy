@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   Calendar, DollarSign, BookOpen, Clock, Bell,
   TrendingUp, Award, CheckCircle, AlertCircle, GraduationCap,
+  ClipboardList, NotebookPen, BookMarked,
 } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_STUDENT_PORTAL_USERS } from '@/data/portalDummyData';
@@ -20,11 +21,14 @@ export default function StudentOverview() {
   const latestResult = results[0];
 
   const QUICK_LINKS = [
-    { label: 'My Attendance',  href: '/student/attendance',  icon: Calendar,  color: 'indigo', bg: 'bg-indigo-50', ic: 'text-indigo-600',  value: `${attendance?.percentage ?? '--'}%` },
-    { label: 'My Fees',        href: '/student/fees',        icon: DollarSign,color: 'emerald',bg: 'bg-emerald-50',ic: 'text-emerald-600', value: pendingFees.length > 0 ? `${pendingFees.length} pending` : 'All clear' },
-    { label: 'My Exams',       href: '/student/exams',       icon: BookOpen,  color: 'violet', bg: 'bg-violet-50', ic: 'text-violet-600',  value: latestResult ? `${latestResult.percentage}%` : 'No results' },
-    { label: 'Timetable',      href: '/student/timetable',   icon: Clock,     color: 'cyan',   bg: 'bg-cyan-50',   ic: 'text-cyan-600',    value: 'Class 1-A' },
-    { label: 'Announcements',  href: '/student/announcements',icon: Bell,     color: 'rose',   bg: 'bg-rose-50',   ic: 'text-rose-600',    value: '6 notices' },
+    { label: 'My Attendance',  href: '/student/attendance',  icon: Calendar,      color: 'indigo', bg: 'bg-indigo-50', ic: 'text-indigo-600',  value: `${attendance?.percentage ?? '--'}%` },
+    { label: 'My Fees',        href: '/student/fees',        icon: DollarSign,    color: 'emerald',bg: 'bg-emerald-50',ic: 'text-emerald-600', value: pendingFees.length > 0 ? `${pendingFees.length} pending` : 'All clear' },
+    { label: 'My Exams',       href: '/student/exams',       icon: BookOpen,      color: 'violet', bg: 'bg-violet-50', ic: 'text-violet-600',  value: latestResult ? `${latestResult.percentage}%` : 'No results' },
+    { label: 'Timetable',      href: '/student/timetable',   icon: Clock,         color: 'cyan',   bg: 'bg-cyan-50',   ic: 'text-cyan-600',    value: 'Class 1-A' },
+    { label: 'Syllabus',       href: '/student/syllabus',    icon: BookMarked,    color: 'teal',   bg: 'bg-teal-50',   ic: 'text-teal-600',    value: '5 subjects' },
+    { label: 'Assignments',    href: '/student/assignments', icon: ClipboardList, color: 'amber',  bg: 'bg-amber-50',  ic: 'text-amber-600',   value: `${(student.assignments ?? []).length || 4} assigned` },
+    { label: 'Homework Diary', href: '/student/homework',    icon: NotebookPen,   color: 'rose',   bg: 'bg-rose-50',   ic: 'text-rose-600',    value: 'View diary' },
+    { label: 'Announcements',  href: '/student/announcements',icon: Bell,         color: 'slate',  bg: 'bg-slate-100', ic: 'text-slate-600',   value: '6 notices' },
   ];
 
   return (

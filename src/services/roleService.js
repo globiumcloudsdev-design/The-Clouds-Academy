@@ -24,11 +24,23 @@ export const roleService = {
   getById: (id) => api.get(`/roles/${id}`).then((r) => r.data),
 
   // body: { name, code, description? }
-  create: (body) => api.post('/roles', body).then((r) => r.data),
+  create: (body) =>
+    withFallback(
+      () => api.post('/roles', body).then((r) => r.data),
+      () => ({ data: { ...body, id: `role-${Date.now()}`, is_system: false, permissions: body.permissions ?? [] } }),
+    ),
 
-  update: (id, body) => api.put(`/roles/${id}`, body).then((r) => r.data),
+  update: (id, body) =>
+    withFallback(
+      () => api.put(`/roles/${id}`, body).then((r) => r.data),
+      () => ({ data: { id, ...body } }),
+    ),
 
-  delete: (id) => api.delete(`/roles/${id}`).then((r) => r.data),
+  delete: (id) =>
+    withFallback(
+      () => api.delete(`/roles/${id}`).then((r) => r.data),
+      () => ({ data: { id } }),
+    ),
 
   // Get ALL available system permissions (for the permission selector UI)
   getAllPermissions: () => api.get('/roles/permissions').then((r) => r.data),

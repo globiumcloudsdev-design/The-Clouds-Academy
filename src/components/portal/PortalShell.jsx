@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
   GraduationCap, LayoutDashboard, Calendar, DollarSign,
   BookOpen, Bell, Clock, LogOut, Menu, X, ChevronDown, Users,
-  Briefcase, FileText, ClipboardList, NotebookPen, UserCheck,
+  Briefcase, FileText, ClipboardList, NotebookPen, UserCheck, BookMarked,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import usePortalStore from '@/store/portalStore';
@@ -27,6 +27,9 @@ const STUDENT_NAV = [
   // { label: 'My Fees',        href: '/student/fees',          icon: DollarSign },
   { label: 'My Exams',       href: '/student/exams',         icon: BookOpen },
   { label: 'Timetable',      href: '/student/timetable',     icon: Clock },
+  { label: 'Syllabus',       href: '/student/syllabus',      icon: BookMarked },
+  { label: 'Assignments',    href: '/student/assignments',   icon: ClipboardList },
+  { label: 'Homework Diary', href: '/student/homework',      icon: NotebookPen },
   { label: 'Announcements',  href: '/student/announcements', icon: Bell },
 ];
 

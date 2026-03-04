@@ -38,7 +38,7 @@ const STATUS_OPTIONS = [
 ];
 
 // ─── API ──────────────────────────────────────────────────
-const fetchSubs        = ({ school_id, status }) => masterAdminService.getSubscriptions({ school_id: school_id || undefined, status: status || undefined });
+const fetchSubs        = ({ page, limit, school_id, status }) => masterAdminService.getSubscriptions({ page, limit, school_id: school_id || undefined, status: status || undefined });
 const createSub        = (body) => masterAdminService.createSubscription(body);
 const cancelSub        = (id)   => masterAdminService.cancelSubscription(id);
 const fetchSchoolsList = ()     => masterAdminService.getSchools({ limit: 100 }).then((r) => r?.data?.rows ?? r?.data ?? []);
@@ -100,14 +100,16 @@ const buildColumns = (onCancel) => [
 export default function SubscriptionsPage() {
   const qc = useQueryClient();
 
+  const [page,         setPage]         = useState(1);
+  const [pageSize,     setPageSize]     = useState(10);
   const [schoolFilter, setSchoolFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [createOpen,   setCreateOpen]   = useState(false);
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['master-subs', schoolFilter, statusFilter],
-    queryFn:  () => fetchSubs({ school_id: schoolFilter, status: statusFilter }),
+    queryKey: ['master-subs', page, pageSize, schoolFilter, statusFilter],
+    queryFn:  () => fetchSubs({ page, limit: pageSize, school_id: schoolFilter, status: statusFilter }),
   });
 
   // Schools list for the dropdown in create form
@@ -116,7 +118,9 @@ export default function SubscriptionsPage() {
     queryFn:  fetchSchoolsList,
   });
 
-  const subs = data?.data?.rows ?? data?.data ?? [];
+  const subs       = data?.data?.rows ?? data?.data ?? [];
+  const totalCount = data?.data?.total ?? subs.length;
+  const totalPages = (data?.data?.totalPages ?? Math.ceil(totalCount / pageSize)) || 1;
 
   const createMutation = useMutation({
     mutationFn: createSub,
@@ -167,17 +171,25 @@ export default function SubscriptionsPage() {
             name: 'school',
             label: 'School',
             value: schoolFilter,
-            onChange: setSchoolFilter,
+            onChange: (v) => { setSchoolFilter(v); setPage(1); },
             options: schoolOptions,
           },
           {
             name: 'status',
             label: 'Status',
             value: statusFilter,
-            onChange: setStatusFilter,
+            onChange: (v) => { setStatusFilter(v); setPage(1); },
             options: STATUS_OPTIONS,
           },
         ]}
+        pagination={{
+          page,
+          totalPages,
+          total:            totalCount,
+          pageSize,
+          onPageChange:     (p) => setPage(p),
+          onPageSizeChange: (s) => { setPageSize(s); setPage(1); },
+        }}
       />
 
       {/* ── Create Modal ── */}
