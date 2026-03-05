@@ -9,10 +9,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
-  LayoutDashboard, Users, GraduationCap, BookOpen,
+  LayoutDashboard, Users, GraduationCap, BookOpen, BookMarked,
   ClipboardList, CalendarCheck, FileText, DollarSign,
   Settings, ShieldCheck, Calendar, CalendarDays, X, CreditCard,
-  UserCog, GitBranch, Layers, Bell, BarChart2,
+  UserCog, GitBranch, Layers, Bell, BarChart2, FlaskConical,
 } from 'lucide-react';
 
 import { SCHOOL_NAV } from '@/constants';
@@ -21,10 +21,10 @@ import useUiStore from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 
 const ICON_MAP = {
-  LayoutDashboard, Users, GraduationCap, BookOpen,
+  LayoutDashboard, Users, GraduationCap, BookOpen, BookMarked,
   ClipboardList, CalendarCheck, CalendarDays, FileText, DollarSign,
   Settings, ShieldCheck, Calendar, CreditCard, UserCog, GitBranch,
-  Layers, Bell, BarChart2,
+  Layers, Bell, BarChart2, FlaskConical,
 };
 
 export default function Sidebar() {

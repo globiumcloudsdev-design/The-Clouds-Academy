@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import usePortalStore from '@/store/portalStore';
-import { dummyPortalLogin, DUMMY_PARENTS, DUMMY_STUDENT_PORTAL_USERS, DUMMY_TEACHER_PORTAL_USERS } from '@/data/portalDummyData';
+import { dummyPortalLogin, PORTAL_DEMO_ACCOUNTS } from '@/data/portalDummyData';
 
 const schema = z.object({
   email:    z.string().email('Enter a valid email'),
@@ -73,12 +73,27 @@ const PORTAL_TYPES = [
   },
 ];
 
+const INSTITUTE_TABS = [
+  { value: 'school',     label: 'School'     },
+  { value: 'coaching',   label: 'Coaching'   },
+  { value: 'academy',    label: 'Academy'    },
+  { value: 'college',    label: 'College'    },
+  { value: 'university', label: 'University' },
+];
+
+const ROLE_STYLES = {
+  PARENT:  { icon: Users,     bg: 'bg-indigo-100',  ic: 'text-indigo-600'  },
+  STUDENT: { icon: BookOpen,  bg: 'bg-emerald-100', ic: 'text-emerald-600' },
+  TEACHER: { icon: Briefcase, bg: 'bg-blue-100',    ic: 'text-blue-600'    },
+};
+
 export default function PortalLoginPage() {
   const router = useRouter();
   const setPortalUser = usePortalStore((s) => s.setPortalUser);
   const [activeType, setActiveType] = useState('PARENT');
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [demoInstitute, setDemoInstitute] = useState('academy');
 
   const activePt = PORTAL_TYPES.find((p) => p.type === activeType);
 
@@ -90,7 +105,7 @@ export default function PortalLoginPage() {
     try {
       setLoading(true);
       const result = dummyPortalLogin({ ...data, type: activeType });
-      setPortalUser(result.user, result.portal_type);
+      setPortalUser(result.user, result.portal_type, result.institute_type);
       Cookies.set('portal_token', result.token, { expires: 1 });
       Cookies.set('portal_type', result.portal_type, { expires: 1 });
       toast.success(`Welcome, ${result.user.name || result.user.first_name}!`);
@@ -100,14 +115,6 @@ export default function PortalLoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillDemo = () => {
-    const demoAccounts = activeType === 'PARENT' ? DUMMY_PARENTS : activeType === 'TEACHER' ? DUMMY_TEACHER_PORTAL_USERS : DUMMY_STUDENT_PORTAL_USERS;
-    const acc = demoAccounts[0];
-    setValue('email', acc.email);
-    setValue('password', acc.password);
-    toast.info('Demo credentials filled!');
   };
 
   return (
@@ -257,19 +264,55 @@ export default function PortalLoginPage() {
                 </Button>
               </form>
 
-              {/* Demo fill button */}
-              <button
-                type="button"
-                onClick={fillDemo}
-                className="w-full mt-3 py-2.5 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all"
-              >
-                Fill Demo Credentials
-              </button>
+              {/* Quick Demo Login */}
+              <div className="mt-5 pt-5 border-t border-slate-100">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Quick Demo Login</p>
 
-              {/* Demo hint - mobile */}
-              <div className="lg:hidden mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Demo</p>
-                <p className="text-xs font-mono text-slate-700">{activePt.demoHint}</p>
+                {/* Institute type tabs */}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {INSTITUTE_TABS.map((tab) => (
+                    <button
+                      key={tab.value}
+                      type="button"
+                      onClick={() => setDemoInstitute(tab.value)}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${
+                        demoInstitute === tab.value
+                          ? 'bg-slate-800 text-white'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Account cards — 3 per institute type */}
+                <div className="grid grid-cols-3 gap-2">
+                  {PORTAL_DEMO_ACCOUNTS.filter((a) => a.institute_type === demoInstitute).map((acc) => {
+                    const rs = ROLE_STYLES[acc.role];
+                    const Icon = rs.icon;
+                    return (
+                      <button
+                        key={acc.email}
+                        type="button"
+                        onClick={() => {
+                          setActiveType(acc.role);
+                          setValue('email', acc.email);
+                          setValue('password', acc.password);
+                          toast.success(`${acc.role.charAt(0) + acc.role.slice(1).toLowerCase()} account filled!`);
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 hover:border-slate-400 bg-slate-50 hover:bg-white hover:shadow-sm transition-all text-center group"
+                      >
+                        <div className={`w-8 h-8 rounded-lg ${rs.bg} flex items-center justify-center`}>
+                          <Icon className={`w-4 h-4 ${rs.ic}`} />
+                        </div>
+                        <p className="text-[11px] font-bold text-slate-800 leading-tight">{acc.name.split(' ')[0]}</p>
+                        <p className="text-[10px] text-slate-400 capitalize leading-none">{acc.role.toLowerCase()}</p>
+                        <p className="text-[9px] text-slate-300 leading-none font-mono">{acc.password}</p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Staff login link */}

@@ -7,6 +7,7 @@ import {
   DUMMY_STUDENT_PORTAL_USERS,
   DUMMY_TEACHER_HOMEWORK,
 } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { cn } from '@/lib/utils';
 
 // ── Subject colours ────────────────────────────────────────────
@@ -47,6 +48,7 @@ const SUBJECT_FILTERS = ['All', 'Mathematics', 'Science', 'English', 'Urdu', 'Co
 export default function StudentHomeworkPage() {
   const { portalUser } = usePortalStore();
   const student = portalUser || DUMMY_STUDENT_PORTAL_USERS[0];
+  const t = getPortalTerms(student?.institute_type);
   const classId = student.class_id || 'class-001';
 
   const [subjectFilter, setSubjectFilter] = useState('All');
@@ -78,7 +80,7 @@ export default function StudentHomeworkPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <NotebookPen className="w-6 h-6 text-emerald-600" /> Homework Diary
+          <NotebookPen className="w-6 h-6 text-emerald-600" /> {t.homeworkLabel}
         </h1>
         <p className="text-sm text-slate-500 mt-1">{student.class_name} — Academic Year 2025–26</p>
       </div>

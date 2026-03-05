@@ -10,6 +10,7 @@ import {
   DUMMY_STUDENT_PORTAL_USERS,
   DUMMY_TEACHER_ASSIGNMENTS,
 } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -51,6 +52,7 @@ function dueBadge(due) {
 export default function StudentAssignmentsPage() {
   const { portalUser } = usePortalStore();
   const student  = portalUser || DUMMY_STUDENT_PORTAL_USERS[0];
+  const t = getPortalTerms(student?.institute_type);
   const classId  = student.class_id || 'class-001';
 
   // local submitted state (key = assignment id)
@@ -87,7 +89,7 @@ export default function StudentAssignmentsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <ClipboardList className="w-6 h-6 text-emerald-600" /> My Assignments
+          <ClipboardList className="w-6 h-6 text-emerald-600" /> My {t.assignmentsLabel}
         </h1>
         <p className="text-sm text-slate-500 mt-1">{student.class_name} — Academic Year 2025–26</p>
       </div>

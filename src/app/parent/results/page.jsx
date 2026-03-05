@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { BookOpen, Award, TrendingUp, User } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_PARENTS } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 
 const GRADE_COLORS = {
   'A+': 'text-emerald-600 bg-emerald-50', A: 'text-blue-600 bg-blue-50',
@@ -11,7 +12,7 @@ const GRADE_COLORS = {
   'C':  'text-amber-600 bg-amber-50',      F: 'text-red-600 bg-red-50',
 };
 
-function ResultCard({ result, childName }) {
+function ResultCard({ result, childName, t }) {
   const pct = result.percentage;
   const arcColor = pct >= 80 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444';
 
@@ -45,7 +46,7 @@ function ResultCard({ result, childName }) {
 
       {/* Subjects table */}
       <div className="p-5">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Subject-wise Results</p>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">{t.subjectsLabel}-wise {t.resultsLabel}</p>
         <div className="space-y-2.5">
           {result.subjects.map((s) => {
             const pctS = Math.round((s.marks / s.total) * 100);
@@ -68,7 +69,7 @@ function ResultCard({ result, childName }) {
 
         {result.remarks && (
           <div className="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
-            <p className="text-xs font-semibold text-indigo-700">Teacher&apos;s Remarks</p>
+            <p className="text-xs font-semibold text-indigo-700">{t.teacherLabel}&apos;s Remarks</p>
             <p className="text-sm text-indigo-600 mt-0.5">{result.remarks}</p>
           </div>
         )}
@@ -80,6 +81,7 @@ function ResultCard({ result, childName }) {
 export default function ParentResultsPage() {
   const { portalUser } = usePortalStore();
   const parent = portalUser || DUMMY_PARENTS[0];
+  const t = getPortalTerms(parent?.institute_type);
   const children = parent.children || [];
   const [selectedChild, setSelectedChild] = useState(0);
 
@@ -89,8 +91,8 @@ export default function ParentResultsPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-xl font-extrabold text-slate-900">Exam Results</h1>
-        <p className="text-sm text-slate-500 mt-1">Published exam results and subject-wise performance.</p>
+        <h1 className="text-xl font-extrabold text-slate-900">{t.resultsLabel}</h1>
+        <p className="text-sm text-slate-500 mt-1">Published {t.examLabel.toLowerCase()} results and {t.subjectLabel.toLowerCase()}-wise performance.</p>
       </div>
 
       {children.length > 1 && (
@@ -113,7 +115,7 @@ export default function ParentResultsPage() {
       ) : (
         <div className="space-y-5">
           {results.map((r) => (
-            <ResultCard key={`${r.exam_id}-${r.student_id}`} result={r} childName={`${child.first_name} ${child.last_name}`} />
+            <ResultCard key={`${r.exam_id}-${r.student_id}`} result={r} childName={`${child.first_name} ${child.last_name}`} t={t} />
           ))}
         </div>
       )}

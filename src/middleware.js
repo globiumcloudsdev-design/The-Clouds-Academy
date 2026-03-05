@@ -15,6 +15,18 @@ const PARENT_PATHS  = ['/parent/'];
 const STUDENT_PATHS = ['/student/'];
 const TEACHER_PATHS = ['/teacher/'];
 
+// Institute-type admin route prefixes — all require access_token + matching institute_type cookie
+const INSTITUTE_PREFIXES = ['/school/', '/coaching/', '/academy/', '/college/', '/university/'];
+
+// Map institute_type cookie value → allowed route prefix
+const INSTITUTE_ROUTE_MAP = {
+  school:     '/school/',
+  coaching:   '/coaching/',
+  academy:    '/academy/',
+  college:    '/college/',
+  university: '/university/',
+};
+
 export function middleware(request) {
   const { pathname } = request.nextUrl;
 
@@ -76,10 +88,36 @@ export function middleware(request) {
   }
 
   // Already authenticated → don't allow login page
+  // Redirect to institute-type dashboard
   if (token && (pathname === '/login')) {
+    const instituteType = request.cookies.get('institute_type')?.value;
+    const PATHS = {
+      school:     '/school/dashboard',
+      coaching:   '/coaching/dashboard',
+      academy:    '/academy/dashboard',
+      college:    '/college/dashboard',
+      university: '/university/dashboard',
+    };
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    url.pathname = PATHS[instituteType] ?? '/dashboard';
     return NextResponse.redirect(url);
+  }
+
+  // Institute-type route guard
+  // e.g. a 'school' admin trying to access /coaching/* should be redirected
+  const matchedPrefix = INSTITUTE_PREFIXES.find((p) => pathname.startsWith(p));
+  if (matchedPrefix && token) {
+    const instituteType = request.cookies.get('institute_type')?.value;
+    const roleCode      = request.cookies.get('role_code')?.value;
+    // MASTER_ADMIN can access any institute route
+    if (roleCode !== 'MASTER_ADMIN' && instituteType) {
+      const allowedPrefix = INSTITUTE_ROUTE_MAP[instituteType];
+      if (allowedPrefix && !pathname.startsWith(allowedPrefix)) {
+        const url = request.nextUrl.clone();
+        url.pathname = INSTITUTE_ROUTE_MAP[instituteType] + 'dashboard';
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   // Master Admin guard — only allow MASTER_ADMIN role on /master-admin/*

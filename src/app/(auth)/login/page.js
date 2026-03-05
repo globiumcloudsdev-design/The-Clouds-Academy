@@ -13,8 +13,16 @@ import { authService } from '@/services';
 import useAuthStore from '@/store/authStore';
 import { DUMMY_USERS, INSTITUTE_TYPES } from '@/data/dummyData';
 
-const schema = z.object({
-  school_code: z.string().min(2, 'Enter your institute code'),
+// Institute login — school_code required
+const instituteSchema = z.object({
+  school_code: z.string().min(2, 'Institute code is required'),
+  email:       z.string().email('Invalid email'),
+  password:    z.string().min(6, 'Minimum 6 characters'),
+});
+
+// Master admin login — no school_code needed
+const masterSchema = z.object({
+  school_code: z.string().optional(),
   email:       z.string().email('Invalid email'),
   password:    z.string().min(6, 'Minimum 6 characters'),
 });
@@ -63,13 +71,24 @@ export default function LoginPage() {
   const setUser     = useAuthStore((s) => s.setUser);
   const [loading,  setLoading]  = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [loginMode, setLoginMode] = useState('institute'); // 'institute' | 'master'
+
+  const isMaster = loginMode === 'master';
 
   const {
     register,
     handleSubmit,
     setValue,
+    reset,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(schema) });
+  } = useForm({
+    resolver: zodResolver(isMaster ? masterSchema : instituteSchema),
+  });
+
+  const switchMode = (mode) => {
+    setLoginMode(mode);
+    reset();
+  };
 
   const onSubmit = async (data) => {
     try {
@@ -77,11 +96,28 @@ export default function LoginPage() {
       const res = await authService.login(data);
       setUser(res.user, res.access_token);
       Cookies.set('role_code', res.user.role_code, { expires: 7 });
+
+      // Store institute_type in cookie so middleware can use it for route guards
+      const instType =
+        res.user.institute_type ||
+        res.user.school?.institute_type ||
+        res.user.institute?.institute_type;
+      if (instType) Cookies.set('institute_type', instType, { expires: 7 });
+
       toast.success(`Welcome back, ${res.user.first_name}!`);
+
+      // Redirect to the correct institute-type dashboard
+      const DASHBOARD_PATHS = {
+        school:     '/school/dashboard',
+        coaching:   '/coaching/dashboard',
+        academy:    '/academy/dashboard',
+        college:    '/college/dashboard',
+        university: '/university/dashboard',
+      };
       if (res.user.role_code === 'MASTER_ADMIN') {
         router.replace('/master-admin');
       } else {
-        router.replace('/dashboard');
+        router.replace(DASHBOARD_PATHS[instType] ?? '/dashboard');
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || 'Login failed');
@@ -91,10 +127,18 @@ export default function LoginPage() {
   };
 
   const fillDemo = (user) => {
-    setValue('school_code', user.school_code);
-    setValue('email',       user.email);
-    setValue('password',    user.password);
-    toast.info(`Filled: ${user.first_name} (${user.role?.name})`);
+    const isMasterUser = user.role_code === 'MASTER_ADMIN';
+    // Switch mode to match demo user type
+    if (isMasterUser && loginMode !== 'master')   switchMode('master');
+    if (!isMasterUser && loginMode !== 'institute') switchMode('institute');
+    // Use setTimeout so reset() finishes before setValue
+    setTimeout(() => {
+      // DUMMY_USERS store institute_code (not school_code) — map it correctly
+      if (!isMasterUser) setValue('school_code', user.institute_code ?? '');
+      setValue('email',    user.email);
+      setValue('password', user.password);
+      toast.info(`Filled: ${user.first_name} (${user.role?.name})`);
+    }, 0);
   };
 
   return (
@@ -106,20 +150,50 @@ export default function LoginPage() {
           <h2 className="mb-1 text-xl font-semibold">Sign in</h2>
           <p className="mb-6 text-sm text-muted-foreground">Enter your credentials to continue</p>
 
+          {/* ── Login mode toggle ── */}
+          <div className="mb-5 flex rounded-lg border bg-muted/40 p-1">
+            <button
+              type="button"
+              onClick={() => switchMode('institute')}
+              className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-all ${
+                !isMaster
+                  ? 'bg-background shadow text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Institute Login
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode('master')}
+              className={`flex-1 rounded-md py-1.5 text-sm font-medium transition-all ${
+                isMaster
+                  ? 'bg-background shadow text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Master Admin
+            </button>
+          </div>
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* School Code */}
-            <div>
-              <label className="mb-1 block text-sm font-medium">Institute Code</label>
-              <input
-                {...register('school_code')}
-                placeholder="e.g. TCA-LHR"
-                autoComplete="organization"
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-              />
-              {errors.school_code && (
-                <p className="mt-1 text-xs text-destructive">{errors.school_code.message}</p>
-              )}
-            </div>
+            {/* Institute Code — hidden for Master Admin */}
+            {!isMaster && (
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Institute Code <span className="text-destructive">*</span>
+                </label>
+                <input
+                  {...register('school_code')}
+                  placeholder="e.g. TCA-LHR"
+                  autoComplete="organization"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                />
+                {errors.school_code && (
+                  <p className="mt-1 text-xs text-destructive">{errors.school_code.message}</p>
+                )}
+              </div>
+            )}
 
             {/* Email */}
             <div>

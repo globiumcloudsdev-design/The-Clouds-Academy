@@ -241,6 +241,7 @@ export const DUMMY_PARENTS = [
     address: '12 Main Boulevard, Gulberg, Lahore',
     relation: 'Father',
     portal_type: 'PARENT',
+    institute_type: 'academy',
     children: [
       {
         ...DUMMY_STUDENTS[0],
@@ -272,6 +273,7 @@ export const DUMMY_PARENTS = [
     address: '45 DHA Phase 5, Lahore',
     relation: 'Mother',
     portal_type: 'PARENT',
+    institute_type: 'academy',
     children: [
       {
         ...DUMMY_STUDENTS[2],
@@ -305,6 +307,7 @@ export const DUMMY_STUDENT_PORTAL_USERS = [
     guardian_name: 'Muhammad Raza',
     guardian_phone: '+92-300-9876543',
     portal_type: 'STUDENT',
+    institute_type: 'academy',
     attendance: DUMMY_PORTAL_ATTENDANCE['stu-001'],
     fees: DUMMY_FEES.filter((f) => f.student_id === 'stu-001'),
     results: DUMMY_EXAM_RESULTS.filter((r) => r.student_id === 'stu-001'),
@@ -325,6 +328,7 @@ export const DUMMY_STUDENT_PORTAL_USERS = [
     guardian_name: 'Muhammad Raza',
     guardian_phone: '+92-300-9876543',
     portal_type: 'STUDENT',
+    institute_type: 'academy',
     attendance: DUMMY_PORTAL_ATTENDANCE['stu-002'],
     fees: DUMMY_FEES.filter((f) => f.student_id === 'stu-002'),
     results: DUMMY_EXAM_RESULTS.filter((r) => r.student_id === 'stu-002'),
@@ -396,6 +400,7 @@ export const DUMMY_TEACHER_PORTAL_USERS = [
     department: 'Mathematics & Science',
     joining_date: '2020-04-01',
     portal_type: 'TEACHER',
+    institute_type: 'academy',
     assigned_classes: [
       { class_id: 'class-001', class_name: 'Class 1 – Section A', subjects: ['Mathematics', 'Science'], total_students: 40 },
       { class_id: 'class-002', class_name: 'Class 1 – Section B', subjects: ['Science'],                 total_students: 38 },
@@ -418,6 +423,7 @@ export const DUMMY_TEACHER_PORTAL_USERS = [
     department: 'English & Languages',
     joining_date: '2021-08-15',
     portal_type: 'TEACHER',
+    institute_type: 'academy',
     assigned_classes: [
       { class_id: 'class-001', class_name: 'Class 1 – Section A', subjects: ['English', 'Art & Craft', 'General Knowledge'], total_students: 40 },
     ],
@@ -441,29 +447,76 @@ export const getTeacherStudents = (teacher) => {
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 8 ▸ PORTAL LOGIN HELPER
+// 8 ▸ QUICK DEMO ACCOUNTS  (one per institute_type × portal_role)
+// ──────────────────────────────────────────────────────────────────────────────
+export const PORTAL_DEMO_ACCOUNTS = [
+  // ── School
+  { institute_type: 'school',     role: 'PARENT',  name: 'Ahmed Khan',          sub: 'Parent of Usman',           email: 'parent@school.edu',       password: 'parent@123'  },
+  { institute_type: 'school',     role: 'STUDENT', name: 'Usman Ali',           sub: 'Class 9 – Section A',       email: 'student@school.edu',      password: 'student@123' },
+  { institute_type: 'school',     role: 'TEACHER', name: 'Rabia Naz',           sub: 'Mathematics Teacher',        email: 'teacher@school.edu',      password: 'teacher@123' },
+  // ── Coaching
+  { institute_type: 'coaching',   role: 'PARENT',  name: 'Sara Ahmed',          sub: 'Parent of Bilal',           email: 'parent@coaching.edu',     password: 'parent@123'  },
+  { institute_type: 'coaching',   role: 'STUDENT', name: 'Bilal Hassan',        sub: 'Batch A – Morning',         email: 'student@coaching.edu',    password: 'student@123' },
+  { institute_type: 'coaching',   role: 'TEACHER', name: 'Imran Butt',          sub: 'Physics Instructor',        email: 'instructor@coaching.edu', password: 'teacher@123' },
+  // ── Academy  (maps to real full-data accounts)
+  { institute_type: 'academy',    role: 'PARENT',  name: 'Muhammad Raza',       sub: 'Parent of Ali & Fatima',    email: 'parent@tca.edu.pk',       password: 'parent@123'  },
+  { institute_type: 'academy',    role: 'STUDENT', name: 'Ali Raza',            sub: 'Class 1 – Section A',       email: 'ali@student.tca',         password: 'student@123' },
+  { institute_type: 'academy',    role: 'TEACHER', name: 'Hassan Mahmood',      sub: 'Maths & Science Teacher',   email: 'hassan@teacher.tca',      password: 'teacher@123' },
+  // ── College
+  { institute_type: 'college',    role: 'PARENT',  name: 'Dr. Khalid Siddiqui', sub: 'Parent of Zara',           email: 'parent@college.edu',      password: 'parent@123'  },
+  { institute_type: 'college',    role: 'STUDENT', name: 'Zara Malik',          sub: 'FSc Year 1',                email: 'student@college.edu',     password: 'student@123' },
+  { institute_type: 'college',    role: 'TEACHER', name: 'Tariq Mehmood',       sub: 'Physics Lecturer',          email: 'lecturer@college.edu',    password: 'teacher@123' },
+  // ── University
+  { institute_type: 'university', role: 'PARENT',  name: 'Mrs. Farida Nawaz',   sub: 'Parent of Hamza',          email: 'parent@uni.edu',          password: 'parent@123'  },
+  { institute_type: 'university', role: 'STUDENT', name: 'Hamza Nawaz',         sub: 'BS-CS Semester 4',          email: 'student@uni.edu',         password: 'student@123' },
+  { institute_type: 'university', role: 'TEACHER', name: 'Prof. Hassan Ali',    sub: 'Data Structures Professor', email: 'professor@uni.edu',       password: 'teacher@123' },
+];
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 9 ▸ PORTAL LOGIN HELPER
 // ──────────────────────────────────────────────────────────────────────────────
 export function dummyPortalLogin({ email, password, type }) {
+  const em = email.trim().toLowerCase();
+
   if (type === 'PARENT') {
-    const parent = DUMMY_PARENTS.find(
-      (p) => p.email.toLowerCase() === email.trim().toLowerCase() && p.password === password,
-    );
-    if (!parent) throw new Error('Invalid parent credentials');
-    return { user: parent, portal_type: 'PARENT', token: `portal-parent-${parent.id}` };
+    const parent = DUMMY_PARENTS.find((p) => p.email.toLowerCase() === em && p.password === password);
+    if (parent) return { user: parent, portal_type: 'PARENT', institute_type: parent.institute_type || 'school', token: `portal-parent-${parent.id}` };
   }
   if (type === 'STUDENT') {
-    const student = DUMMY_STUDENT_PORTAL_USERS.find(
-      (s) => s.email.toLowerCase() === email.trim().toLowerCase() && s.password === password,
-    );
-    if (!student) throw new Error('Invalid student credentials');
-    return { user: student, portal_type: 'STUDENT', token: `portal-student-${student.id}` };
+    const student = DUMMY_STUDENT_PORTAL_USERS.find((s) => s.email.toLowerCase() === em && s.password === password);
+    if (student) return { user: student, portal_type: 'STUDENT', institute_type: student.institute_type || 'school', token: `portal-student-${student.id}` };
   }
   if (type === 'TEACHER') {
-    const teacher = DUMMY_TEACHER_PORTAL_USERS.find(
-      (t) => t.email.toLowerCase() === email.trim().toLowerCase() && t.password === password,
-    );
-    if (!teacher) throw new Error('Invalid teacher credentials');
-    return { user: teacher, portal_type: 'TEACHER', token: `portal-teacher-${teacher.id}` };
+    const teacher = DUMMY_TEACHER_PORTAL_USERS.find((t) => t.email.toLowerCase() === em && t.password === password);
+    if (teacher) return { user: teacher, portal_type: 'TEACHER', institute_type: teacher.institute_type || 'school', token: `portal-teacher-${teacher.id}` };
   }
-  throw new Error('Unknown portal type');
+
+  // Fallback — for non-academy demo types: reuse real data, override institute_type
+  const demo = PORTAL_DEMO_ACCOUNTS.find((a) => a.email.toLowerCase() === em && a.password === password && a.role === type);
+  if (demo) {
+    // Pick the real full-data user (academy) and override only institute_type
+    let baseUser;
+    if (type === 'PARENT')  baseUser = DUMMY_PARENTS[0];
+    if (type === 'STUDENT') baseUser = DUMMY_STUDENT_PORTAL_USERS[0];
+    if (type === 'TEACHER') baseUser = DUMMY_TEACHER_PORTAL_USERS[0];
+
+    const user = {
+      ...baseUser,
+      id:             demo.email,
+      name:           demo.role === 'PARENT' ? demo.name : baseUser.name,
+      first_name:     demo.role !== 'PARENT' ? demo.name.split(' ')[0] : baseUser.first_name,
+      last_name:      demo.role !== 'PARENT' ? demo.name.split(' ').slice(1).join(' ') : baseUser.last_name,
+      email:          demo.email,
+      institute_type: demo.institute_type,
+      portal_type:    demo.role,
+    };
+    return {
+      user,
+      portal_type:    demo.role,
+      institute_type: demo.institute_type,
+      token: `portal-${demo.role.toLowerCase()}-${demo.institute_type}`,
+    };
+  }
+
+  throw new Error('Invalid credentials. Check your email and password.');
 }

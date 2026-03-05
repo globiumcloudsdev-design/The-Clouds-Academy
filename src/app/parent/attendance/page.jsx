@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Calendar, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_PARENTS } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 
 const STATUS_CONFIG = {
   present: { color: 'bg-emerald-100 text-emerald-700',  dot: 'bg-emerald-500', icon: CheckCircle, label: 'Present' },
@@ -14,6 +15,7 @@ const STATUS_CONFIG = {
 export default function ParentAttendancePage() {
   const { portalUser } = usePortalStore();
   const parent = portalUser || DUMMY_PARENTS[0];
+  const t = getPortalTerms(parent?.institute_type);
   const children = parent.children || [];
   const [selectedChild, setSelectedChild] = useState(0);
 
@@ -24,8 +26,8 @@ export default function ParentAttendancePage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-xl font-extrabold text-slate-900">Attendance Record</h1>
-        <p className="text-sm text-slate-500 mt-1">View daily and monthly attendance for your child.</p>
+        <h1 className="text-xl font-extrabold text-slate-900">{t.attendanceLabel} Record</h1>
+        <p className="text-sm text-slate-500 mt-1">View daily and monthly {t.attendanceLabel.toLowerCase()} for your child.</p>
       </div>
 
       {/* Child selector */}

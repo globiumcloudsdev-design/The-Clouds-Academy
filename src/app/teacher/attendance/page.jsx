@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { UserCheck, CheckCircle2, XCircle, Clock, Save, AlertCircle } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_TEACHER_PORTAL_USERS, getTeacherStudents } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ const UNSET_BTN = 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50';
 export default function TeacherAttendancePage() {
   const { portalUser } = usePortalStore();
   const teacher    = portalUser || DUMMY_TEACHER_PORTAL_USERS[0];
+  const t = getPortalTerms(teacher?.institute_type);
   const classes    = teacher.assigned_classes || [];
   const today      = new Date().toISOString().split('T')[0];
 
@@ -68,7 +70,7 @@ export default function TeacherAttendancePage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <UserCheck className="w-6 h-6 text-blue-600" /> Mark Attendance
+          <UserCheck className="w-6 h-6 text-blue-600" /> Mark {t.attendanceLabel}
         </h1>
         <p className="text-sm text-slate-500 mt-1">Date: {today}</p>
       </div>
@@ -134,8 +136,8 @@ export default function TeacherAttendancePage() {
       {/* Student list */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-700">Students — {classes.find((c) => c.class_id === selectedClass)?.class_name}</h2>
-          <span className="text-xs text-slate-400">{students.length} students</span>
+          <h2 className="text-sm font-bold text-slate-700">{t.studentsLabel} — {classes.find((c) => c.class_id === selectedClass)?.class_name}</h2>
+          <span className="text-xs text-slate-400">{students.length} {t.studentsLabel.toLowerCase()}</span>
         </div>
         <div className="divide-y divide-slate-100">
           {students.map((s, i) => {

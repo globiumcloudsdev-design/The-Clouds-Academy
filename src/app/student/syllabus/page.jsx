@@ -8,6 +8,7 @@ import {
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_STUDENT_PORTAL_USERS } from '@/data/portalDummyData';
 import { DUMMY_SUBJECTS } from '@/data/dummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { cn } from '@/lib/utils';
 
 // ── Subject colours ────────────────────────────────────────────
@@ -25,6 +26,7 @@ const PALETTE = [
 export default function StudentSyllabusPage() {
   const { portalUser } = usePortalStore();
   const student  = portalUser || DUMMY_STUDENT_PORTAL_USERS[0];
+  const t = getPortalTerms(student?.institute_type);
   const classId  = student.class_id || 'class-001';
 
   const subjects = DUMMY_SUBJECTS.filter((s) => s.class_id === classId && s.is_active !== false);
@@ -43,7 +45,7 @@ export default function StudentSyllabusPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <BookMarked className="w-6 h-6 text-emerald-600" /> My Syllabus
+          <BookMarked className="w-6 h-6 text-emerald-600" /> My {t.syllabusLabel}
         </h1>
         <p className="text-sm text-slate-500 mt-1">{student.class_name} — Academic Year 2025–26</p>
       </div>
@@ -51,11 +53,11 @@ export default function StudentSyllabusPage() {
       {/* Summary banner */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-5 text-white flex items-center justify-between flex-wrap gap-4">
         <div>
-          <p className="text-white/70 text-xs mb-0.5">Total Subjects</p>
+          <p className="text-white/70 text-xs mb-0.5">Total {t.subjectsLabel}</p>
           <p className="text-4xl font-extrabold">{subjects.length}</p>
         </div>
         <div className="text-right">
-          <p className="text-white/70 text-xs mb-0.5">Class</p>
+          <p className="text-white/70 text-xs mb-0.5">{t.classLabel}</p>
           <p className="text-lg font-bold">{student.class_name}</p>
         </div>
         <div className="w-full sm:w-auto">

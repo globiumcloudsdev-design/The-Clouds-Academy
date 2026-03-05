@@ -3,6 +3,7 @@
 import { BookOpen, Award, Star, TrendingUp } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_STUDENT_PORTAL_USERS, DUMMY_EXAM_RESULTS } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 
 const GRADE_COLORS = {
   'A+': 'bg-emerald-100 text-emerald-700',
@@ -17,7 +18,7 @@ const GRADE_COLORS = {
 const BAR_COLOR = (pct) =>
   pct >= 90 ? 'bg-emerald-500' : pct >= 75 ? 'bg-teal-500' : pct >= 60 ? 'bg-amber-500' : 'bg-red-400';
 
-function ResultCard({ result }) {
+function ResultCard({ result, t }) {
   const gradePct = result.percentage;
   const rankGradient = gradePct >= 90 ? 'from-emerald-600 to-teal-700' : gradePct >= 75 ? 'from-teal-600 to-cyan-700' : 'from-amber-600 to-orange-700';
 
@@ -56,7 +57,7 @@ function ResultCard({ result }) {
 
       {/* Subject-wise */}
       <div className="p-5 space-y-3">
-        <h4 className="text-sm font-bold text-slate-700 mb-2">Subject-wise Performance</h4>
+        <h4 className="text-sm font-bold text-slate-700 mb-2">{t.subjectsLabel}-wise Performance</h4>
         {result.subjects?.map((sub, idx) => {
           const obtained = sub.marks ?? sub.obtained ?? 0;
           const total    = sub.total  ?? sub.total_marks ?? 100;
@@ -86,7 +87,7 @@ function ResultCard({ result }) {
       {/* Remarks */}
       {(result.remarks || result.teacher_remarks) && (
         <div className="mx-5 mb-5 bg-slate-50 rounded-xl p-3 border border-slate-100">
-          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Teacher&apos;s Remarks</p>
+          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">{t.teacherLabel}&apos;s Remarks</p>
           <p className="text-sm text-slate-700 italic">&ldquo;{result.remarks || result.teacher_remarks}&rdquo;</p>
         </div>
       )}
@@ -97,6 +98,7 @@ function ResultCard({ result }) {
 export default function StudentExamsPage() {
   const { portalUser } = usePortalStore();
   const student = portalUser || DUMMY_STUDENT_PORTAL_USERS[0];
+  const t = getPortalTerms(student?.institute_type);
   const studentId = student.id || 'stu-001';
   const results = student.results || DUMMY_EXAM_RESULTS[studentId] || [];
 
@@ -105,7 +107,7 @@ export default function StudentExamsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <BookOpen className="w-6 h-6 text-emerald-600" /> My Exam Results
+          <BookOpen className="w-6 h-6 text-emerald-600" /> My {t.resultsLabel}
         </h1>
         <p className="text-sm text-slate-500 mt-1">{student.first_name} {student.last_name} — {student.class_name}</p>
       </div>
@@ -120,7 +122,7 @@ export default function StudentExamsPage() {
       ) : (
         <div className="space-y-6">
           {results.map((r) => (
-            <ResultCard key={r.exam_id} result={r} />
+            <ResultCard key={r.exam_id} result={r} t={t} />
           ))}
         </div>
       )}

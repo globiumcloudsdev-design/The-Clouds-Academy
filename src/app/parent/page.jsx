@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_PARENTS } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { Badge } from '@/components/ui/badge';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -23,7 +24,7 @@ function getStatusColor(status) {
   }
 }
 
-function ChildCard({ child, index }) {
+function ChildCard({ child, index, t }) {
   const attendance = child.attendance;
   const latestFees = child.fees?.slice(-2) || [];
   const latestResult = child.results?.[0];
@@ -41,7 +42,7 @@ function ChildCard({ child, index }) {
             <div>
               <h3 className="font-bold text-white text-base">{child.first_name} {child.last_name}</h3>
               <p className="text-sm text-white/75">{child.class_name}</p>
-              <p className="text-xs text-white/60">Roll # {child.roll_no || child.roll_number}</p>
+              <p className="text-xs text-white/60">{t.rollLabel} {child.roll_no || child.roll_number}</p>
             </div>
           </div>
           <Badge className="bg-white/20 text-white border-0 text-xs">Active</Badge>
@@ -52,19 +53,19 @@ function ChildCard({ child, index }) {
       <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
         <div className="p-4 text-center">
           <p className="text-xl font-extrabold text-indigo-600">{attendance?.percentage ?? '--'}%</p>
-          <p className="text-xs text-slate-500 mt-0.5">Attendance</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t.attendanceLabel}</p>
         </div>
         <div className="p-4 text-center">
           <p className={`text-xl font-extrabold ${hasPending ? 'text-amber-600' : 'text-emerald-600'}`}>
             {hasPending ? 'Pending' : 'Clear'}
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">Fee Status</p>
+          <p className="text-xs text-slate-500 mt-0.5">{t.feeLabel} Status</p>
         </div>
         <div className="p-4 text-center">
           <p className="text-xl font-extrabold text-violet-600">
             {latestResult ? `${latestResult.percentage}%` : 'N/A'}
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">Last Result</p>
+          <p className="text-xs text-slate-500 mt-0.5">Last {t.resultLabel}</p>
         </div>
       </div>
 
@@ -72,19 +73,19 @@ function ChildCard({ child, index }) {
       <div className="p-4 grid grid-cols-2 gap-2">
         <Link href="/parent/attendance" className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold hover:bg-indigo-100 transition-colors">
           <Calendar className="w-3.5 h-3.5" />
-          View Attendance
+          View {t.attendanceLabel}
         </Link>
         <Link href="/parent/fees" className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition-colors">
           <DollarSign className="w-3.5 h-3.5" />
-          Fee Details
+          {t.feesLabel}
         </Link>
         <Link href="/parent/results" className="flex items-center gap-2 px-3 py-2 bg-violet-50 text-violet-700 rounded-lg text-xs font-semibold hover:bg-violet-100 transition-colors">
           <BookOpen className="w-3.5 h-3.5" />
-          Exam Results
+          {t.resultsLabel}
         </Link>
         <Link href="/parent/announcements" className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-700 rounded-lg text-xs font-semibold hover:bg-rose-100 transition-colors">
           <Bell className="w-3.5 h-3.5" />
-          Announcements
+          {t.announcementsLabel}
         </Link>
       </div>
     </div>
@@ -94,6 +95,7 @@ function ChildCard({ child, index }) {
 export default function ParentOverview() {
   const { portalUser } = usePortalStore();
   const parent = portalUser || DUMMY_PARENTS[0];
+  const t = getPortalTerms(parent?.institute_type);
   const children = parent.children || [];
 
   // Aggregate stats across all children
@@ -155,7 +157,7 @@ export default function ParentOverview() {
         <h2 className="text-base font-bold text-slate-800 mb-4">My Children</h2>
         <div className="grid md:grid-cols-2 gap-5">
           {children.map((child, i) => (
-            <ChildCard key={child.id} child={child} index={i} />
+            <ChildCard key={child.id} child={child} index={i} t={t} />
           ))}
         </div>
       </div>

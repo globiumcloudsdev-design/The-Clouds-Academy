@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ClipboardList, PlusCircle, CheckCircle2, Clock, Award, CalendarIcon } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_TEACHER_PORTAL_USERS } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +32,7 @@ const EMPTY_FORM = { title: '', subject: '', class_id: '', description: '', due_
 export default function TeacherAssignmentsPage() {
   const { portalUser } = usePortalStore();
   const teacher     = portalUser || DUMMY_TEACHER_PORTAL_USERS[0];
+  const t = getPortalTerms(teacher?.institute_type);
   const assignments = teacher.assignments || [];
   const classes     = teacher.assigned_classes || [];
 
@@ -65,9 +67,9 @@ export default function TeacherAssignmentsPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-            <ClipboardList className="w-6 h-6 text-blue-600" /> Assignments
+            <ClipboardList className="w-6 h-6 text-blue-600" /> {t.assignmentsLabel}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">{assignments.length} assignments across your classes</p>
+          <p className="text-sm text-slate-500 mt-1">{assignments.length} {t.assignmentsLabel.toLowerCase()} across your {t.classesLabel.toLowerCase()}</p>
         </div>
         <Button
           className="bg-blue-600 hover:bg-blue-700 text-white gap-2 flex-shrink-0"

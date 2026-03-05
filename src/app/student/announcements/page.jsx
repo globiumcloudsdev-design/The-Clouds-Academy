@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Bell, ChevronDown, ChevronUp, Calendar, User } from 'lucide-react';
 import { DUMMY_ANNOUNCEMENTS } from '@/data/portalDummyData';
+import usePortalStore from '@/store/portalStore';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 
 const CATEGORIES = ['All', 'Exam', 'Fee', 'Event', 'Meeting', 'Holiday', 'General'];
 
@@ -22,6 +24,8 @@ const PRIORITY_COLORS = {
 };
 
 export default function StudentAnnouncementsPage() {
+  const { portalUser } = usePortalStore();
+  const t = getPortalTerms(portalUser?.institute_type);
   const [activeCategory, setActiveCategory] = useState('All');
   const [expanded, setExpanded] = useState(null);
 
@@ -36,9 +40,9 @@ export default function StudentAnnouncementsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <Bell className="w-6 h-6 text-emerald-600" /> Announcements
+          <Bell className="w-6 h-6 text-emerald-600" /> {t.announcementsLabel}
         </h1>
-        <p className="text-sm text-slate-500 mt-1">Stay updated with school news and notices</p>
+        <p className="text-sm text-slate-500 mt-1">Latest news and notices from {t.teacherLabel.toLowerCase()}s &amp; administration</p>
       </div>
 
       {/* Category filters */}

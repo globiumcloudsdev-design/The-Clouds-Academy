@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Bell, Calendar, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { DUMMY_ANNOUNCEMENTS } from '@/data/portalDummyData';
+import usePortalStore from '@/store/portalStore';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 
 const CATEGORY_COLORS = {
   Exam:    'bg-indigo-100 text-indigo-700 border-indigo-200',
@@ -20,6 +22,8 @@ const PRIORITY_BADGE = {
 };
 
 export default function AnnouncementsPage() {
+  const { portalUser } = usePortalStore();
+  const t = getPortalTerms(portalUser?.institute_type);
   const [expanded, setExpanded] = useState('ann-001');
   const [filter, setFilter] = useState('All');
 

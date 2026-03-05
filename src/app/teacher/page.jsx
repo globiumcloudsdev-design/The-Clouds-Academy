@@ -8,21 +8,25 @@ import {
 } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_TEACHER_PORTAL_USERS } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { Badge } from '@/components/ui/badge';
 
-const QUICK_LINKS = [
-  { label: 'My Classes',       href: '/teacher/classes',       icon: Briefcase,     bg: 'bg-blue-50',    ic: 'text-blue-600' },
-  { label: 'My Students',      href: '/teacher/students',      icon: Users,         bg: 'bg-sky-50',     ic: 'text-sky-600' },
-  { label: 'Notes',            href: '/teacher/notes',         icon: FileText,      bg: 'bg-indigo-50',  ic: 'text-indigo-600' },
-  { label: 'Assignments',      href: '/teacher/assignments',   icon: ClipboardList, bg: 'bg-violet-50',  ic: 'text-violet-600' },
-  { label: 'Homework & Diary', href: '/teacher/homework',      icon: NotebookPen,   bg: 'bg-cyan-50',    ic: 'text-cyan-600' },
-  { label: 'Mark Attendance',  href: '/teacher/attendance',    icon: UserCheck,     bg: 'bg-teal-50',    ic: 'text-teal-600' },
-  { label: 'Announcements',    href: '/teacher/announcements', icon: Bell,          bg: 'bg-rose-50',    ic: 'text-rose-600' },
+const QUICK_LINK_DEFS = [
+  { key: 'classes',     href: '/teacher/classes',       icon: Briefcase,     bg: 'bg-blue-50',    ic: 'text-blue-600' },
+  { key: 'students',    href: '/teacher/students',      icon: Users,         bg: 'bg-sky-50',     ic: 'text-sky-600' },
+  { key: 'notes',       href: '/teacher/notes',         icon: FileText,      bg: 'bg-indigo-50',  ic: 'text-indigo-600' },
+  { key: 'assignments', href: '/teacher/assignments',   icon: ClipboardList, bg: 'bg-violet-50',  ic: 'text-violet-600' },
+  { key: 'homework',    href: '/teacher/homework',      icon: NotebookPen,   bg: 'bg-cyan-50',    ic: 'text-cyan-600' },
+  { key: 'attendance',  href: '/teacher/attendance',    icon: UserCheck,     bg: 'bg-teal-50',    ic: 'text-teal-600' },
+  { key: 'announcements',href: '/teacher/announcements', icon: Bell,         bg: 'bg-rose-50',    ic: 'text-rose-600' },
 ];
 
 export default function TeacherOverview() {
   const { portalUser } = usePortalStore();
   const teacher = portalUser || DUMMY_TEACHER_PORTAL_USERS[0];
+  const t = getPortalTerms(teacher?.institute_type);
+
+  const QUICK_LINKS = QUICK_LINK_DEFS.map((ql) => ({ ...ql, label: t.nav[ql.key] || ql.key }));
 
   const stats = teacher.stats || {};
   const activeAssignments = (teacher.assignments || []).filter((a) => a.status === 'active');
@@ -61,10 +65,10 @@ export default function TeacherOverview() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'My Classes',     value: stats.classes || teacher.assigned_classes?.length || 0, icon: Briefcase,  color: 'text-blue-600',   bg: 'bg-blue-50' },
-          { label: 'Total Students', value: stats.total_students || 0, icon: Users,       color: 'text-sky-600',    bg: 'bg-sky-50' },
-          { label: 'Notes Uploaded', value: stats.notes_uploaded || (teacher.notes?.length || 0), icon: FileText,    color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Active Tasks',   value: activeAssignments.length, icon: ClipboardList,color: 'text-violet-600', bg: 'bg-violet-50' },
+          { label: t.nav.classes,     value: stats.classes || teacher.assigned_classes?.length || 0, icon: Briefcase,  color: 'text-blue-600',   bg: 'bg-blue-50' },
+          { label: `Total ${t.studentsLabel}`, value: stats.total_students || 0, icon: Users, color: 'text-sky-600', bg: 'bg-sky-50' },
+          { label: `${t.notesLabel} Uploaded`, value: stats.notes_uploaded || (teacher.notes?.length || 0), icon: FileText, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: `Active ${t.assignmentsLabel}`, value: activeAssignments.length, icon: ClipboardList, color: 'text-violet-600', bg: 'bg-violet-50' },
         ].map((s) => {
           const Icon = s.icon;
           return (
@@ -101,7 +105,7 @@ export default function TeacherOverview() {
 
       {/* My Classes mini */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-        <h2 className="text-base font-bold text-slate-800 mb-4">My Assigned Classes</h2>
+        <h2 className="text-base font-bold text-slate-800 mb-4">My Assigned {t.classesLabel}</h2>
         <div className="grid sm:grid-cols-2 gap-3">
           {(teacher.assigned_classes || []).map((cls) => (
             <div key={cls.class_id} className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
@@ -110,7 +114,7 @@ export default function TeacherOverview() {
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-800">{cls.class_name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{cls.total_students} students</p>
+                <p className="text-xs text-slate-500 mt-0.5">{cls.total_students} {t.studentsLabel.toLowerCase()}</p>
                 <div className="flex flex-wrap gap-1 mt-1.5">
                   {cls.subjects.map((sub) => (
                     <span key={sub} className="text-[10px] bg-white text-blue-700 px-2 py-0.5 rounded-full border border-blue-200 font-medium">{sub}</span>
@@ -126,7 +130,7 @@ export default function TeacherOverview() {
       {recentHomework.length > 0 && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-800">Recent Homework Given</h2>
+            <h2 className="text-base font-bold text-slate-800">Recent {t.nav.homework} Given</h2>
             <Link href="/teacher/homework" className="text-xs text-blue-600 font-semibold hover:underline">View all</Link>
           </div>
           <div className="space-y-2">

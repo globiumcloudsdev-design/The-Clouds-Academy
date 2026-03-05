@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Users } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_TEACHER_PORTAL_USERS, getTeacherStudents } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import DataTable from '@/components/common/DataTable';
 
 const ATTENDANCE_COLORS = {
@@ -15,6 +16,7 @@ const ATTENDANCE_COLORS = {
 export default function TeacherStudentsPage() {
   const { portalUser } = usePortalStore();
   const teacher  = portalUser || DUMMY_TEACHER_PORTAL_USERS[0];
+  const t = getPortalTerms(teacher?.institute_type);
   const students = getTeacherStudents(teacher);
   const classes  = teacher.assigned_classes || [];
 
@@ -83,9 +85,9 @@ export default function TeacherStudentsPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <Users className="w-6 h-6 text-blue-600" /> My Students
+          <Users className="w-6 h-6 text-blue-600" /> My {t.studentsLabel}
         </h1>
-        <p className="text-sm text-slate-500 mt-1">{students.length} students across {classes.length} class(es)</p>
+        <p className="text-sm text-slate-500 mt-1">{students.length} {t.studentsLabel.toLowerCase()} across {classes.length} {t.classesLabel.toLowerCase()}</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">

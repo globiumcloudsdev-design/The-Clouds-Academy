@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { DollarSign, CheckCircle, AlertCircle, Clock, Download } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_PARENTS } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { Badge } from '@/components/ui/badge';
 
 const MONTHS = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -18,6 +19,7 @@ const STATUS = {
 export default function ParentFeesPage() {
   const { portalUser } = usePortalStore();
   const parent = portalUser || DUMMY_PARENTS[0];
+  const t = getPortalTerms(parent?.institute_type);
   const children = parent.children || [];
   const [selectedChild, setSelectedChild] = useState(0);
 

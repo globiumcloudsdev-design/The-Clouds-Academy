@@ -59,7 +59,42 @@ export const useAuthStore = create(
         return codes.some((code) => (u.permissions || []).includes(code));
       },
 
-      schoolHasBranches: () => get().user?.school?.has_branches === true,
+      schoolHasBranches: () => {
+        const u = get().user;
+        return u?.school?.has_branches === true || u?.institute?.has_branches === true;
+      },
+
+      // Institute type of the logged-in user's institute
+      // Returns: 'school' | 'coaching' | 'academy' | 'college' | 'university' | null
+      instituteType: () => {
+        const u = get().user;
+        return (
+          u?.institute_type ||
+          u?.school?.institute_type ||
+          u?.institute?.institute_type ||
+          null
+        );
+      },
+
+      // Where to redirect after login based on institute type
+      dashboardPath: () => {
+        const u = get().user;
+        if (!u) return '/login';
+        if (u.role_code === 'MASTER_ADMIN') return '/master-admin';
+        const type =
+          u.institute_type ||
+          u.school?.institute_type ||
+          u.institute?.institute_type ||
+          'school';
+        const PATHS = {
+          school:     '/school/dashboard',
+          coaching:   '/coaching/dashboard',
+          academy:    '/academy/dashboard',
+          college:    '/college/dashboard',
+          university: '/university/dashboard',
+        };
+        return PATHS[type] ?? '/dashboard';
+      },
     }),
     {
       name: 'clouds-auth',

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Calendar, CheckCircle2, XCircle, Clock, TrendingUp } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_STUDENT_PORTAL_USERS, DUMMY_PORTAL_ATTENDANCE } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { Badge } from '@/components/ui/badge';
 
 const STATUS_CLASSES = {
@@ -19,6 +20,7 @@ const DAYS_SHORT = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export default function StudentAttendancePage() {
   const { portalUser } = usePortalStore();
   const student = portalUser || DUMMY_STUDENT_PORTAL_USERS[0];
+  const t = getPortalTerms(student?.institute_type);
   const studentId = student.id || 'stu-001';
   const attendance = student.attendance || DUMMY_PORTAL_ATTENDANCE[studentId];
 
@@ -43,7 +45,7 @@ export default function StudentAttendancePage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <Calendar className="w-6 h-6 text-emerald-600" /> My Attendance
+          <Calendar className="w-6 h-6 text-emerald-600" /> My {t.attendanceLabel}
         </h1>
         <p className="text-sm text-slate-500 mt-1">February 2026 — {student.class_name}</p>
       </div>
@@ -72,7 +74,7 @@ export default function StudentAttendancePage() {
           <div className={`${barColor} h-3 rounded-full transition-all`} style={{ width: `${pct}%` }} />
         </div>
         <p className={`text-xs mt-2 font-medium ${pctColor}`}>
-          {pct >= 90 ? '✓ Excellent attendance — Keep it up!' : pct >= 75 ? '⚠ Attendance below 90% — Try to attend more.' : '✗ Attendance critically low — Please consult your teacher.'}
+          {pct >= 90 ? `✓ Excellent ${t.attendanceLabel.toLowerCase()} — Keep it up!` : pct >= 75 ? `⚠ ${t.attendanceLabel} below 90% — Try to attend more.` : `✗ ${t.attendanceLabel} critically low — Please consult your ${t.teacherLabel.toLowerCase()}.`}
         </p>
       </div>
 

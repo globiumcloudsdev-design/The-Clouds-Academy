@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Clock, BookOpen, User, MapPin } from 'lucide-react';
 import usePortalStore from '@/store/portalStore';
 import { DUMMY_STUDENT_PORTAL_USERS, DUMMY_TIMETABLE } from '@/data/portalDummyData';
+import { getPortalTerms } from '@/constants/portalInstituteConfig';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -28,6 +29,7 @@ function getSubjectColor(subject) {
 export default function StudentTimetablePage() {
   const { portalUser } = usePortalStore();
   const student = portalUser || DUMMY_STUDENT_PORTAL_USERS[0];
+  const t = getPortalTerms(student?.institute_type);
   const classId = student.class_id || 'class-001';
   const timetable = DUMMY_TIMETABLE[classId] || {};
 
@@ -43,7 +45,7 @@ export default function StudentTimetablePage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-          <Clock className="w-6 h-6 text-emerald-600" /> Class Timetable
+          <Clock className="w-6 h-6 text-emerald-600" /> {t.timetableLabel}
         </h1>
         <p className="text-sm text-slate-500 mt-1">{student.class_name} — Academic Year 2025–26</p>
       </div>
