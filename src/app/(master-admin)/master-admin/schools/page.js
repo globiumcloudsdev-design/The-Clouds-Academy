@@ -1,153 +1,202 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import {
+  Plus, Building2, CheckCircle2, Clock, XCircle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { masterAdminService } from '@/services';
 import { INSTITUTE_TYPES } from '@/data/dummyData';
 import {
-  PageHeader,
-  DataTable,
-  StatusBadge,
-  TableRowActions,
-  ConfirmDialog,
-  AppModal,
-  InputField,
-  CheckboxField,
-  SelectField,
-  FormSubmitButton,
-  ErrorAlert,
+  PageHeader, DataTable, StatusBadge, TableRowActions,
+  ConfirmDialog, AppModal, InputField, SelectField,
+  SwitchField, FormSubmitButton,
 } from '@/components/common';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
-// ─── Helpers ─────────────────────────────────────────────────
-const INST_TYPE_OPTIONS = INSTITUTE_TYPES.map((t) => ({ value: t.value, label: `${t.icon}  ${t.label}` }));
+// ─── Constants ────────────────────────────────────────────────────────────────
+const INST_TYPE_OPTIONS = INSTITUTE_TYPES.map((t) => ({
+  value: t.value, label: `${t.icon}  ${t.label}`,
+}));
 
-const TYPE_BADGE = {
-  school:     'bg-blue-100 text-blue-800',
-  coaching:   'bg-orange-100 text-orange-800',
-  academy:    'bg-indigo-100 text-indigo-800',
-  college:    'bg-cyan-100 text-cyan-800',
-  university: 'bg-violet-100 text-violet-800',
-};
-
-// ─── API helpers ─────────────────────────────────────────────
-const fetchInstitutes       = ({ page, search, is_active }) =>
-  masterAdminService.getSchools({ page, limit: 20, search: search || undefined, is_active: is_active || undefined });
-const createInstitute       = (body)          => masterAdminService.createSchool(body);
-const deleteInstitute       = (id)            => masterAdminService.deleteSchool(id);
-const toggleInstituteStatus = (id, is_active) => masterAdminService.toggleSchoolStatus(id, is_active);
-
-// ─── Columns ─────────────────────────────────────────────────
-const buildColumns = (onEdit, onToggle, onDelete, router) => [
-  {
-    accessorKey: 'name',
-    header: 'Institute Name',
-    cell: ({ row }) => (
-      <span className="font-medium">{row.original.name}</span>
-    ),
-  },
-  {
-    accessorKey: 'code',
-    header: 'Code',
-    cell: ({ getValue }) => (
-      <span className="font-mono text-sm text-muted-foreground">{getValue()}</span>
-    ),
-  },
-  {
-    accessorKey: 'institute_type',
-    header: 'Type',
-    cell: ({ getValue }) => {
-      const val     = getValue();
-      const typeDef = INSTITUTE_TYPES.find((t) => t.value === val);
-      if (!typeDef) return <span className="text-muted-foreground text-xs">—</span>;
-      return (
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${TYPE_BADGE[val] ?? 'bg-gray-100 text-gray-700'}`}>
-          {typeDef.icon} {typeDef.label}
-        </span>
-      );
-    },
-  },
-  {
-    accessorKey: 'has_branches',
-    header: 'Branches',
-    cell: ({ getValue }) => (getValue() ? 'Yes' : 'No'),
-  },
-  {
-    id: 'subscription',
-    header: 'Plan',
-    cell: ({ row }) => row.original.subscription?.plan ?? '—',
-  },
-  {
-    accessorKey: 'is_active',
-    header: 'Status',
-    cell: ({ getValue }) => (
-      <StatusBadge status={getValue() ? 'active' : 'inactive'} />
-    ),
-  },
-  {
-    id: 'actions',
-    header: '',
-    cell: ({ row }) => {
-      const s = row.original;
-      return (
-        <TableRowActions
-          onView={() => router.push(`/master-admin/schools/${s.id}`)}
-          onEdit={() => onEdit(s)}
-          onDelete={() => onDelete(s)}
-          extra={[
-            {
-              label: s.is_active ? 'Deactivate' : 'Activate',
-              onClick: () => onToggle(s),
-            },
-          ]}
-        />
-      );
-    },
-  },
+const STATUS_OPTIONS = [
+  { value: 'true',  label: '🟢 Active'   },
+  { value: 'false', label: '🔴 Inactive' },
 ];
 
-// ─── Page ────────────────────────────────────────────────────
+const PLAN_OPTIONS = [
+  { value: 'basic',      label: '💎 Basic'      },
+  { value: 'standard',   label: '⭐ Standard'   },
+  { value: 'premium',    label: '👑 Premium'    },
+  { value: 'enterprise', label: '🏢 Enterprise' },
+];
+
+const BOARD_OPTIONS = [
+  'Punjab Board', 'Federal Board', 'Cambridge CAIE', 'AKU-EB', 'Aga Khan Board',
+].map((v) => ({ value: v, label: v }));
+
+const PROVINCE_OPTIONS = [
+  'Punjab', 'Sindh', 'KPK', 'Balochistan', 'Islamabad (ICT)', 'GB',
+].map((v) => ({ value: v, label: v }));
+
+const TYPE_BADGE = {
+  school:     'bg-blue-100 text-blue-800 border-blue-200',
+  coaching:   'bg-orange-100 text-orange-800 border-orange-200',
+  academy:    'bg-indigo-100 text-indigo-800 border-indigo-200',
+  college:    'bg-cyan-100 text-cyan-800 border-cyan-200',
+  university: 'bg-violet-100 text-violet-800 border-violet-200',
+};
+
+const PLAN_BADGE = {
+  basic:      'bg-slate-100 text-slate-700',
+  standard:   'bg-blue-100 text-blue-700',
+  premium:    'bg-amber-100 text-amber-700',
+  enterprise: 'bg-purple-100 text-purple-700',
+};
+
+// ─── Columns ─────────────────────────────────────────────────────────────────
+function buildColumns(onEdit, onToggle, onDelete, router) {
+  return [
+    {
+      id: 'name',
+      header: 'Institute Name',
+      cell: ({ row }) => {
+        const s = row.original;
+        return (
+          <div className="cursor-pointer" onClick={() => router.push(`/master-admin/schools/${s.id}`)}>
+            <p className="font-semibold text-slate-800 hover:text-emerald-700 transition-colors">{s.name}</p>
+            <p className="text-xs text-muted-foreground font-mono">{s.code}</p>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'institute_type',
+      header: 'Type',
+      cell: ({ getValue }) => {
+        const val = getValue();
+        const def = INSTITUTE_TYPES.find((t) => t.value === val);
+        if (!def) return <span className="text-muted-foreground text-xs">—</span>;
+        return (
+          <span className={cn(
+            'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold',
+            TYPE_BADGE[val] ?? 'bg-gray-100 text-gray-700',
+          )}>
+            {def.icon} {def.label}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'plan',
+      header: 'Plan',
+      cell: ({ row }) => {
+        const plan = row.original.subscription?.plan;
+        if (!plan) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <span className={cn(
+            'rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize',
+            PLAN_BADGE[plan] ?? 'bg-gray-100 text-gray-700',
+          )}>
+            {plan}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'sub_status',
+      header: 'Sub. Status',
+      cell: ({ row }) => {
+        const status = row.original.subscription?.status;
+        if (!status) return <span className="text-xs text-muted-foreground">—</span>;
+        const cfg = ({
+          active:    { icon: CheckCircle2, cls: 'text-emerald-600', label: 'Active'     },
+          expired:   { icon: XCircle,      cls: 'text-red-500',     label: 'Expired'    },
+          cancelled: { icon: XCircle,      cls: 'text-slate-400',   label: 'Cancelled'  },
+          trial:     { icon: Clock,        cls: 'text-amber-500',   label: 'Trial'      },
+        })[status] ?? { icon: Clock, cls: 'text-slate-400', label: status };
+        return (
+          <span className={cn('flex items-center gap-1 text-xs font-medium', cfg.cls)}>
+            <cfg.icon size={12} /> {cfg.label}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: 'is_active',
+      header: 'Status',
+      cell: ({ getValue }) => <StatusBadge status={getValue() ? 'active' : 'inactive'} />,
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => {
+        const s = row.original;
+        return (
+          <TableRowActions
+            onView={() => router.push(`/master-admin/schools/${s.id}`)}
+            onEdit={() => onEdit(s)}
+            onDelete={() => onDelete(s)}
+            extra={[
+              {
+                label: s.is_active ? '🔒 Deactivate' : '✅ Activate',
+                onClick: () => onToggle(s),
+              },
+            ]}
+          />
+        );
+      },
+    },
+  ];
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function MasterSchoolsPage() {
-  const router  = useRouter();
-  const qc      = useQueryClient();
+  const router = useRouter();
+  const qc     = useQueryClient();
 
-  const [page,     setPage]     = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [search,   setSearch]   = useState('');
-  const [status,   setStatus]   = useState('');
+  const [page,       setPage]       = useState(1);
+  const [search,     setSearch]     = useState('');
+  const [status,     setStatus]     = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
 
-  const [createOpen, setCreateOpen] = useState(false);
-  const [deleteTarget,  setDeleteTarget]  = useState(null); // { id, name }
-  const [toggleTarget,  setToggleTarget]  = useState(null); // { id, name, is_active }
-  const [editTarget,    setEditTarget]    = useState(null); // school obj for edit modal
+  const [createOpen,   setCreateOpen]   = useState(false);
+  const [editTarget,   setEditTarget]   = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [toggleTarget, setToggleTarget] = useState(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['master-institutes', page, pageSize, search, status],
-    queryFn:  () => fetchInstitutes({ page, limit: pageSize, search, is_active: status }),
+    queryKey: ['master-institutes', page, search, status, typeFilter],
+    queryFn: () => masterAdminService.getSchools({
+      page, limit: 15,
+      search: search || undefined,
+      is_active: status || undefined,
+      institute_type: typeFilter || undefined,
+    }),
   });
 
   const institutes = data?.data?.rows ?? data?.data ?? [];
+  const totalPages = data?.data?.totalPages ?? 1;
   const totalCount = data?.data?.total ?? institutes.length;
-  const totalPages = (data?.data?.totalPages ?? Math.ceil(totalCount / pageSize)) || 1;
+  const activeCount = institutes.filter((i) => i.is_active).length;
 
-  // ── Mutations
   const createMutation = useMutation({
-    mutationFn: createInstitute,
+    mutationFn: (body) => masterAdminService.createSchool(body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['master-institutes'] });
-      toast.success('Institute created');
+      toast.success('Institute created successfully');
       setCreateOpen(false);
     },
-    onError: (e) => toast.error(e?.response?.data?.message ?? 'Failed to create institute'),
+    onError: (e) => toast.error(e?.response?.data?.message ?? 'Create failed'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: ({ id }) => deleteInstitute(id),
+    mutationFn: ({ id }) => masterAdminService.deleteSchool(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['master-institutes'] });
       toast.success('Institute deleted');
@@ -157,14 +206,28 @@ export default function MasterSchoolsPage() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, is_active }) => toggleInstituteStatus(id, is_active),
+    mutationFn: ({ id, is_active }) => masterAdminService.toggleSchoolStatus(id, is_active),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['master-institutes'] });
       toast.success('Status updated');
       setToggleTarget(null);
     },
-    onError: (e) => toast.error(e?.response?.data?.message ?? 'Update failed'),
+    onError: (e) => toast.error(e?.response?.data?.message ?? 'Failed'),
   });
+
+  const handleFormSubmit = (body) => {
+    if (editTarget) {
+      masterAdminService.updateSchool(editTarget.id, body)
+        .then(() => {
+          qc.invalidateQueries({ queryKey: ['master-institutes'] });
+          toast.success('Institute updated');
+          setEditTarget(null);
+        })
+        .catch((e) => toast.error(e?.response?.data?.message ?? 'Update failed'));
+    } else {
+      createMutation.mutate(body);
+    }
+  };
 
   const columns = useMemo(
     () => buildColumns(setEditTarget, setToggleTarget, setDeleteTarget, router),
@@ -172,17 +235,40 @@ export default function MasterSchoolsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
-        title="Institutes"
-        description="Manage all registered institutes on the platform"
+        title="🏢 Institute Management"
+        description="Manage all institutes registered on the platform"
         action={
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus size={16} className="mr-2" /> Add Institute
+          <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
+            <Plus size={15} /> New Institute
           </Button>
         }
       />
 
+      {/* ── Quick Stats Strip ──────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: 'Total',    value: totalCount,                   icon: Building2,    bg: 'bg-blue-50',    color: 'text-blue-600'    },
+          { label: 'Active',   value: activeCount,                  icon: CheckCircle2, bg: 'bg-emerald-50', color: 'text-emerald-600' },
+          { label: 'Inactive', value: totalCount - activeCount,     icon: XCircle,      bg: 'bg-red-50',     color: 'text-red-500'     },
+          { label: 'Expiring', value: 12,                           icon: Clock,        bg: 'bg-amber-50',   color: 'text-amber-600'   },
+        ].map((s) => (
+          <div key={s.label} className="flex items-center gap-3 rounded-xl border bg-white p-3 shadow-sm">
+            <div className={cn('rounded-lg p-2', s.bg)}>
+              <s.icon size={16} className={s.color} />
+            </div>
+            <div>
+              <p className="text-xl font-extrabold leading-none text-slate-800">
+                {isLoading ? '—' : s.value}
+              </p>
+              <p className="text-xs text-muted-foreground">{s.label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── DataTable ──────────────────────────────────────── */}
       <DataTable
         columns={columns}
         data={institutes}
@@ -193,90 +279,77 @@ export default function MasterSchoolsPage() {
         searchPlaceholder="Search by name or code…"
         filters={[
           {
-            name: 'status',
-            label: 'Status',
-            value: status,
+            name: 'type', label: 'Type', value: typeFilter,
+            onChange: (v) => { setTypeFilter(v); setPage(1); },
+            options: INSTITUTE_TYPES.map((t) => ({ value: t.value, label: `${t.icon} ${t.label}` })),
+          },
+          {
+            name: 'status', label: 'Status', value: status,
             onChange: (v) => { setStatus(v); setPage(1); },
-            options: [
-              { value: 'true',  label: 'Active'   },
-              { value: 'false', label: 'Inactive' },
-            ],
+            options: STATUS_OPTIONS,
           },
         ]}
-        pagination={{
-          page,
-          totalPages,
-          total:            totalCount,
-          pageSize,
-          onPageChange:     (p) => setPage(p),
-          onPageSizeChange: (s) => { setPageSize(s); setPage(1); },
-        }}
+        pagination={{ page, totalPages, total: totalCount, onPageChange: setPage }}
       />
 
-      {/* ── Create / Edit Modal ── */}
+      {/* ── Form Modal ─────────────────────────────────────── */}
       <InstituteFormModal
         open={createOpen || !!editTarget}
         onClose={() => { setCreateOpen(false); setEditTarget(null); }}
         defaultValues={editTarget ?? {}}
-        onSubmit={(body) => {
-          if (editTarget) {
-            masterAdminService.updateSchool(editTarget.id, body)
-              .then(() => {
-                qc.invalidateQueries({ queryKey: ['master-institutes'] });
-                toast.success('Institute updated');
-                setEditTarget(null);
-              })
-              .catch((e) => toast.error(e?.response?.data?.message ?? 'Update failed'));
-          } else {
-            createMutation.mutate(body);
-          }
-        }}
+        onSubmit={handleFormSubmit}
         loading={createMutation.isPending}
         isEdit={!!editTarget}
       />
 
-      {/* ── Delete Confirm ── */}
+      {/* ── Delete Confirm ─────────────────────────────────── */}
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteMutation.mutate(deleteTarget)}
         loading={deleteMutation.isPending}
         title="Delete Institute"
-        description={`Are you sure you want to permanently delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        description={`Permanently delete "${deleteTarget?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
         variant="destructive"
       />
 
-      {/* ── Toggle Status Confirm ── */}
+      {/* ── Toggle Confirm ─────────────────────────────────── */}
       <ConfirmDialog
         open={!!toggleTarget}
         onClose={() => setToggleTarget(null)}
-        onConfirm={() =>
-          toggleMutation.mutate({ id: toggleTarget.id, is_active: !toggleTarget.is_active })
-        }
+        onConfirm={() => toggleMutation.mutate({ id: toggleTarget.id, is_active: !toggleTarget.is_active })}
         loading={toggleMutation.isPending}
         title={toggleTarget?.is_active ? 'Deactivate Institute' : 'Activate Institute'}
         description={`${toggleTarget?.is_active ? 'Deactivate' : 'Activate'} "${toggleTarget?.name}"?`}
         confirmLabel={toggleTarget?.is_active ? 'Deactivate' : 'Activate'}
+        variant={toggleTarget?.is_active ? 'destructive' : 'default'}
       />
     </div>
   );
 }
 
-// ─── Institute Form (create + edit) ──────────────────────────
+// ─── Section Label ────────────────────────────────────────────────────────────
+function SectionLabel({ children }) {
+  return (
+    <p className="mt-5 mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-1.5">
+      {children}
+    </p>
+  );
+}
+
+// ─── Institute Form Modal ─────────────────────────────────────────────────────
 function InstituteFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit }) {
-  const { register, control, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues,
+  const { register, control, handleSubmit, reset, formState: { errors }, watch } = useForm({
+    defaultValues: { is_active: true, has_branches: false, ...defaultValues },
   });
 
-  const selectedType = useWatch({ control, name: 'institute_type' });
-  const typeDef      = INSTITUTE_TYPES.find((t) => t.value === selectedType);
+  const selectedType = watch('institute_type');
 
-  // Fetch subscription templates for the dropdown
   const { data: tplData } = useQuery({
-    queryKey: ['sub-templates'],
-    queryFn:  () => masterAdminService.getSubscriptionTemplates(),
-    enabled:  open,
+    queryKey: ['sub-templates-list'],
+    queryFn: () => masterAdminService.getSubscriptionTemplates(),
+    enabled: open,
   });
   const tplOptions = (tplData?.data?.rows ?? tplData?.data ?? []).map((t) => ({
     value: t.id,
@@ -289,138 +362,120 @@ function InstituteFormModal({ open, onClose, defaultValues, onSubmit, loading, i
     <AppModal
       open={open}
       onClose={handleClose}
-      title={isEdit ? 'Edit Institute' : 'Add New Institute'}
-      size="lg"
+      title={isEdit ? '✏️ Edit Institute' : '➕ Add New Institute'}
+      description={isEdit ? 'Update institute information' : 'Register a new institute on the platform'}
+      size="xl"
       footer={
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={handleClose}>Cancel</Button>
+        <div className="flex justify-end gap-2 w-full">
+          <Button variant="outline" onClick={handleClose} disabled={loading}>Cancel</Button>
           <FormSubmitButton
             loading={loading}
             label={isEdit ? 'Save Changes' : 'Create Institute'}
-            loadingLabel={isEdit ? 'Saving…' : 'Creating…'}
+            loadingLabel="Saving…"
             onClick={handleSubmit(onSubmit)}
           />
         </div>
       }
     >
-      <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-1">
 
-        {/* ── 1. Institute Type ── */}
-        <div>
-          <SelectField
-            label="Institute Type"
-            name="institute_type"
-            control={control}
-            error={errors.institute_type}
-            options={INST_TYPE_OPTIONS}
-            placeholder="Select type…"
-            required
-          />
-          {typeDef && (
-            <p className="mt-1 text-xs text-muted-foreground">{typeDef.description}</p>
-          )}
-        </div>
-
-        {/* ── 2. Basic Info ── */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Basic Info */}
+        <SectionLabel>Basic Information</SectionLabel>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <InputField
-            label="Institute Name"
-            name="name"
-            register={register}
-            error={errors.name}
-            placeholder={typeDef ? `e.g. My ${typeDef.label}` : 'e.g. Al-Iqbal Public School'}
-            required
+            label="Institute Name" name="name" register={register} error={errors.name}
+            rules={{ required: 'Name is required' }} placeholder="The Clouds Academy" required
           />
-          {!isEdit && (
-            <InputField
-              label="Institute Code"
-              name="code"
-              register={register}
-              error={errors.code}
-              placeholder="e.g. APS-LHR"
-              required
-            />
+          <InputField
+            label="Code" name="code" register={register} error={errors.code}
+            rules={{ required: 'Code is required' }} placeholder="TCA-LHR" required
+          />
+        </div>
+        <SelectField
+          label="Institute Type" name="institute_type" control={control} error={errors.institute_type}
+          options={INST_TYPE_OPTIONS} placeholder="Select type" required
+        />
+
+        {/* Contact */}
+        <SectionLabel>Contact &amp; Address</SectionLabel>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <InputField
+            label="Admin Email" name="admin_email" register={register} error={errors.admin_email}
+            rules={{ required: 'Email is required' }} placeholder="admin@institute.edu.pk" required type="email"
+          />
+          <InputField label="Phone" name="phone" register={register} placeholder="+92-42-35761234" />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <InputField label="Website" name="website" register={register} placeholder="https://institute.edu.pk" />
+          <InputField label="City" name="city" register={register} placeholder="Lahore" />
+        </div>
+        <InputField label="Address" name="address" register={register} placeholder="12-B, Gulberg III, Lahore" />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <SelectField label="Province" name="province" control={control} options={PROVINCE_OPTIONS} placeholder="Select province" />
+          <InputField label="Admin Password (new only)" name="admin_password" register={register} placeholder="Min. 8 characters" type="password" />
+        </div>
+
+        {/* Subscription */}
+        <SectionLabel>Subscription Plan</SectionLabel>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {tplOptions.length > 0 ? (
+            <SelectField label="Subscription Template" name="subscription_template_id" control={control} options={tplOptions} placeholder="Select template" />
+          ) : (
+            <SelectField label="Plan" name="plan" control={control} options={PLAN_OPTIONS} placeholder="Select plan" />
           )}
         </div>
 
-        <InputField
-          label="Address"
-          name="address"
-          register={register}
-          error={errors.address}
-          placeholder="e.g. Plot 5, DHA Phase 2, Lahore"
-        />
-
-        {/* ── 3. Type-specific extra fields ── */}
-        {typeDef && typeDef.extra_fields.length > 0 && (
-          <div className="rounded-lg border border-dashed p-4 space-y-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              {typeDef.icon} {typeDef.label} Details
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {typeDef.extra_fields.map((field) => (
-                <InputField
-                  key={field.name}
-                  label={field.label}
-                  name={field.name}
-                  register={register}
-                  error={errors[field.name]}
-                  placeholder={field.placeholder}
-                  required={field.required}
-                />
-              ))}
+        {/* Type-specific */}
+        {selectedType === 'school' && (
+          <>
+            <SectionLabel>School-Specific</SectionLabel>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <SelectField label="Affiliation Board" name="affiliation_board" control={control} options={BOARD_OPTIONS} placeholder="Select board" />
+              <InputField label="Grade Range" name="grade_range" register={register} placeholder="Class 1 – 12" />
             </div>
-          </div>
+            <InputField label="Principal Name" name="principal_name" register={register} placeholder="Prof. Ahmed Raza" />
+          </>
         )}
 
-        {/* ── 4. Admin Account (create only) ── */}
-        {!isEdit && (
-          <div className="rounded-lg border border-dashed p-4 space-y-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              👤 Admin Account
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <InputField
-                label="Admin Email"
-                name="admin_email"
-                type="email"
-                register={register}
-                error={errors.admin_email}
-                placeholder="admin@institute.com"
-                required
-              />
-              <InputField
-                label="Admin Password"
-                name="admin_password"
-                type="password"
-                register={register}
-                error={errors.admin_password}
-                placeholder="Min 8 characters"
-                required
-              />
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              A default <strong>Institute Admin</strong> role will be auto-assigned. You can manage roles from the institute's portal.
-            </p>
-          </div>
+        {selectedType === 'coaching' && (
+          <>
+            <SectionLabel>Coaching-Specific</SectionLabel>
+            <InputField label="Subject Focus" name="subject_focus" register={register} placeholder="Mathematics, Physics, Chemistry" />
+            <InputField label="Target Exams" name="target_exams" register={register} placeholder="MDCAT, ECAT, CSS" />
+            <InputField label="Director Name" name="director_name" register={register} placeholder="Dr. Khalid Mehmood" />
+          </>
         )}
 
-        {/* ── 5. Subscription Plan ── */}
-        <SelectField
-          label="Subscription Plan"
-          name="subscription_template_id"
-          control={control}
-          error={errors.subscription_template_id}
-          options={tplOptions}
-          placeholder="Assign a subscription plan…"
-        />
+        {selectedType === 'college' && (
+          <>
+            <SectionLabel>College-Specific</SectionLabel>
+            <InputField label="Affiliation University" name="affiliation_board" register={register} placeholder="University of Punjab" />
+            <InputField label="Degree Programs" name="degree_programs" register={register} placeholder="FSc, FA, ICS, B.Com" />
+            <InputField label="Principal Name" name="principal_name" register={register} placeholder="Prof. Naveed Hassan" />
+          </>
+        )}
 
-        {/* ── 6. Branches ── */}
-        <CheckboxField
-          label="This institute has multiple branches"
-          name="has_branches"
-          control={control}
-        />
+        {selectedType === 'university' && (
+          <>
+            <SectionLabel>University-Specific</SectionLabel>
+            <InputField label="Faculties" name="faculties" register={register} placeholder="Engineering, Sciences, Business, Arts" />
+            <InputField label="HEC Charter No." name="hec_charter" register={register} placeholder="HEC-2005-XXX" />
+          </>
+        )}
+
+        {selectedType === 'academy' && (
+          <>
+            <SectionLabel>Academy-Specific</SectionLabel>
+            <InputField label="Specialization" name="specialization" register={register} placeholder="IT & Programming, Languages, Arts…" />
+          </>
+        )}
+
+        {/* Settings */}
+        <SectionLabel>Settings</SectionLabel>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <SwitchField label="Has Branches" name="has_branches" control={control} hint="Institute operates multiple branches" />
+          <SwitchField label="Active" name="is_active" control={control} hint="Institute is active on the platform" />
+        </div>
 
       </form>
     </AppModal>

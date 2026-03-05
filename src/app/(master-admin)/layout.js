@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, CreditCard,
-  LogOut, FileText, Menu, X, ShieldCheck,
+  LogOut, FileText, Menu, X, ShieldCheck, Mail, BarChart3,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
@@ -24,6 +24,8 @@ const NAV = [
   { href: '/master-admin/subscription-templates', label: 'Sub. Templates',  icon: FileText        },
   { href: '/master-admin/roles',                  label: 'Roles',           icon: ShieldCheck     },
   { href: '/master-admin/users',                  label: 'Users',           icon: Users           },
+  { href: '/master-admin/emails',                 label: 'Bulk Emails',     icon: Mail            },
+  { href: '/master-admin/reports',                label: 'Reports',         icon: BarChart3       },
 ];
 
 export default function MasterAdminLayout({ children }) {

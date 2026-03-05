@@ -1,229 +1,259 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Plus, Check, X as XIcon } from 'lucide-react';
+import {
+  Plus, Pencil, Trash2, Check, Star, Crown, Gem, Building2,
+  Users, GraduationCap, GitBranch, HardDrive,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { masterAdminService } from '@/services';
 import {
-  PageHeader,
-  DataTable,
-  StatusBadge,
-  TableRowActions,
-  ConfirmDialog,
-  AppModal,
-  InputField,
-  CheckboxField,
-  FormSubmitButton,
-  ErrorAlert,
+  PageHeader, StatusBadge, ConfirmDialog, AppModal,
+  InputField, SwitchField, FormSubmitButton, CheckboxField,
 } from '@/components/common';
 import { Button } from '@/components/ui/button';
-import { Badge }  from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
-// ─── Helpers ──────────────────────────────────────────────
-const formatPrice   = (p) => p != null ? `PKR ${Number(p).toLocaleString()}` : '—';
-const extractRows   = (d) => d?.data?.rows ?? d?.data ?? [];
-const extractPages  = (d) => d?.data?.totalPages ?? 1;
-
-// ─── Columns ──────────────────────────────────────────────
-const buildColumns = (onEdit, onDelete) => [
-  {
-    accessorKey: 'name',
-    header: 'Plan Name',
-    cell: ({ getValue }) => (
-      <span className="font-semibold capitalize">{getValue()}</span>
-    ),
-  },
-  {
-    accessorKey: 'price_monthly',
-    header: 'Monthly Price',
-    cell: ({ getValue }) => (
-      <span className="font-mono text-sm">{formatPrice(getValue())}</span>
-    ),
-  },
-  {
-    accessorKey: 'duration_months',
-    header: 'Duration',
-    cell: ({ getValue }) => (
-      <Badge variant="outline" className="text-xs">
-        {getValue()} month{getValue() !== 1 ? 's' : ''}
-      </Badge>
-    ),
-  },
-  {
-    id: 'limits',
-    header: 'Limits',
-    cell: ({ row }) => {
-      const t = row.original;
-      return (
-        <div className="text-xs text-muted-foreground space-y-0.5">
-          <p>Students: {t.max_students ?? 'Unlimited'}</p>
-          <p>Teachers: {t.max_teachers ?? 'Unlimited'}</p>
-        </div>
-      );
-    },
-  },
-  {
-    id: 'features',
-    header: 'Features',
-    cell: ({ row }) => {
-      const features = row.original.features ?? [];
-      return (
-        <div className="flex flex-wrap gap-1 max-w-xs">
-          {features.slice(0, 3).map((f) => (
-            <span key={f} className="inline-flex items-center gap-0.5 text-[10px] bg-muted px-1.5 py-0.5 rounded-full">
-              <Check size={9} className="text-emerald-500" /> {f}
-            </span>
-          ))}
-          {features.length > 3 && (
-            <span className="text-[10px] text-muted-foreground">+{features.length - 3} more</span>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'is_active',
-    header: 'Status',
-    cell: ({ getValue }) => (
-      <StatusBadge status={getValue() ? 'active' : 'inactive'} />
-    ),
-  },
-  {
-    id: 'actions',
-    header: '',
-    enableHiding: false,
-    cell: ({ row }) => (
-      <TableRowActions
-        onEdit={() => onEdit(row.original)}
-        onDelete={() => onDelete(row.original)}
-      />
-    ),
-  },
+// ─── Feature options ──────────────────────────────────────────────────────────
+const ALL_FEATURES = [
+  'Attendance Tracking',
+  'Fee Management',
+  'Exam & Results',
+  'Homework & Assignments',
+  'Timetable',
+  'Parent Portal',
+  'Student Portal',
+  'SMS Notifications',
+  'Email Notifications',
+  'Payroll',
+  'Library Management',
+  'Transport',
+  'Hostel',
+  'Advanced Reports',
+  'Multi-Branch',
+  'API Access',
 ];
 
-// ─── Page ─────────────────────────────────────────────────
+const fmtPrice = (p) => p != null ? `PKR ${Number(p).toLocaleString()}` : '—';
+
+// Plan icon mapping
+function PlanIcon({ name, className }) {
+  const n = (name ?? '').toLowerCase();
+  if (n.includes('enterprise')) return <Building2 className={className} />;
+  if (n.includes('premium'))    return <Crown className={className} />;
+  if (n.includes('standard'))   return <Star className={className} />;
+  return <Gem className={className} />;
+}
+
+const PLAN_COLORS = {
+  basic:      { bg: 'bg-slate-50',   border: 'border-slate-200',   accent: 'text-slate-600',   badge: 'bg-slate-100 text-slate-700'   },
+  standard:   { bg: 'bg-blue-50',    border: 'border-blue-200',    accent: 'text-blue-600',    badge: 'bg-blue-100 text-blue-700'     },
+  premium:    { bg: 'bg-amber-50',   border: 'border-amber-200',   accent: 'text-amber-600',   badge: 'bg-amber-100 text-amber-700'   },
+  enterprise: { bg: 'bg-purple-50',  border: 'border-purple-200',  accent: 'text-purple-600',  badge: 'bg-purple-100 text-purple-700' },
+};
+
+// Resolve color by either code or index
+function getPlanColor(tpl, idx) {
+  const name = (tpl.code ?? tpl.name ?? '').toLowerCase();
+  for (const key of ['enterprise', 'premium', 'standard', 'basic']) {
+    if (name.includes(key)) return PLAN_COLORS[key];
+  }
+  const palette = Object.values(PLAN_COLORS);
+  return palette[idx % palette.length];
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SubscriptionTemplatesPage() {
   const qc = useQueryClient();
 
-  const [page,         setPage]        = useState(1);
-  const [pageSize,     setPageSize]    = useState(10);
-  const [createOpen,   setCreateOpen]  = useState(false);
-  const [editTarget,   setEditTarget]  = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [createOpen,    setCreateOpen]    = useState(false);
+  const [editTarget,    setEditTarget]    = useState(null);
+  const [deleteTarget,  setDeleteTarget]  = useState(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sub-templates', page, pageSize],
-    queryFn:  () => masterAdminService.getSubscriptionTemplates({ page, limit: pageSize }),
+    queryKey: ['sub-templates'],
+    queryFn:  () => masterAdminService.getSubscriptionTemplates(),
   });
-
-  const templates  = extractRows(data);
-  const totalCount = data?.data?.total ?? templates.length;
-  const totalPages = (extractPages(data) ?? Math.ceil(totalCount / pageSize)) || 1;
+  const templates = data?.data?.rows ?? data?.data ?? [];
 
   const createMutation = useMutation({
-    mutationFn: masterAdminService.createSubscriptionTemplate,
+    mutationFn: (body) => masterAdminService.createSubscriptionTemplate?.(body) ?? Promise.reject(new Error('createSubscriptionTemplate not available')),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sub-templates'] });
-      toast.success('Template created');
+      toast.success('Plan created');
       setCreateOpen(false);
     },
-    onError: (e) => toast.error(e?.response?.data?.message ?? 'Failed'),
+    onError: (e) => toast.error(e?.response?.data?.message ?? e.message ?? 'Failed'),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }) => masterAdminService.updateSubscriptionTemplate(id, body),
+    mutationFn: ({ id, body }) => masterAdminService.updateSubscriptionTemplate?.(id, body) ?? Promise.reject(new Error('updateSubscriptionTemplate not available')),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sub-templates'] });
-      toast.success('Template updated');
+      toast.success('Plan updated');
       setEditTarget(null);
     },
-    onError: (e) => toast.error(e?.response?.data?.message ?? 'Failed'),
+    onError: (e) => toast.error(e?.response?.data?.message ?? e.message ?? 'Failed'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: ({ id }) => masterAdminService.deleteSubscriptionTemplate(id),
+    mutationFn: ({ id }) => masterAdminService.deleteSubscriptionTemplate?.(id) ?? Promise.reject(new Error('deleteSubscriptionTemplate not available')),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sub-templates'] });
-      toast.success('Template deleted');
+      toast.success('Plan deleted');
       setDeleteTarget(null);
     },
-    onError: (e) => toast.error(e?.response?.data?.message ?? 'Failed'),
+    onError: (e) => toast.error(e?.response?.data?.message ?? e.message ?? 'Failed'),
   });
 
-  const columns = useMemo(
-    () => buildColumns(setEditTarget, setDeleteTarget),
-    [],
-  );
+  const handleSubmit = (body) => {
+    if (editTarget) {
+      updateMutation.mutate({ id: editTarget.id, body });
+    } else {
+      createMutation.mutate(body);
+    }
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
-        title="Subscription Templates"
-        description="Define plan tiers available for school subscriptions"
+        title="📦 Subscription Plans"
+        description="Define and manage plans available to institutes"
         action={
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus size={16} className="mr-2" /> New Template
+          <Button onClick={() => setCreateOpen(true)} className="gap-1.5">
+            <Plus size={15} /> New Plan
           </Button>
         }
       />
 
-      <DataTable
-        columns={columns}
-        data={templates}
-        loading={isLoading}
-        emptyMessage="No subscription templates found"
-        enableColumnVisibility
-        pagination={{
-          page,
-          totalPages,
-          total:            totalCount,
-          pageSize,
-          onPageChange:     (p) => setPage(p),
-          onPageSizeChange: (s) => { setPageSize(s); setPage(1); },
-        }}
+      {/* ── Plan Cards ─────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-72 rounded-2xl border bg-white animate-pulse" />
+          ))}
+        </div>
+      ) : templates.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <Gem size={40} className="mb-3 opacity-30" />
+          <p>No plans found. Create your first plan.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {templates.map((tpl, idx) => {
+            const colors = getPlanColor(tpl, idx);
+            const features = Array.isArray(tpl.features) ? tpl.features : [];
+            return (
+              <div
+                key={tpl.id}
+                className={cn(
+                  'relative flex flex-col rounded-2xl border-2 p-5 shadow-sm transition-all hover:shadow-md',
+                  colors.bg, colors.border,
+                )}
+              >
+                {/* ── Header ── */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className={cn('rounded-full p-2 bg-white shadow-sm')}>
+                      <PlanIcon name={tpl.code ?? tpl.name} className={cn('size-4', colors.accent)} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-800 capitalize">{tpl.name}</h3>
+                      {tpl.code && (
+                        <p className="text-[10px] font-mono text-muted-foreground uppercase">{tpl.code}</p>
+                      )}
+                    </div>
+                  </div>
+                  <StatusBadge status={tpl.is_active !== false ? 'active' : 'inactive'} />
+                </div>
+
+                {/* ── Pricing ── */}
+                <div className="mb-3">
+                  <p className={cn('text-2xl font-extrabold', colors.accent)}>
+                    {fmtPrice(tpl.price_monthly)}
+                    <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                  </p>
+                  {tpl.price_yearly && (
+                    <p className="text-xs text-muted-foreground">
+                      {fmtPrice(tpl.price_yearly)}/yr — save {Math.round((1 - tpl.price_yearly / (tpl.price_monthly * 12)) * 100)}%
+                    </p>
+                  )}
+                  {tpl.duration_months && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Duration: {tpl.duration_months} month{tpl.duration_months > 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+
+                {/* ── Limits ── */}
+                <div className="mb-3 grid grid-cols-2 gap-1.5">
+                  {[
+                    { icon: Users, label: 'Students', val: tpl.max_students ?? '∞' },
+                    { icon: GraduationCap, label: 'Teachers', val: tpl.max_teachers ?? '∞' },
+                    { icon: GitBranch, label: 'Branches', val: tpl.max_branches ?? '∞' },
+                    { icon: HardDrive, label: 'Storage', val: tpl.max_storage_gb ? `${tpl.max_storage_gb}GB` : '∞' },
+                  ].map((l) => (
+                    <div key={l.label} className="flex items-center gap-1 rounded-lg bg-white/60 px-2 py-1">
+                      <l.icon size={11} className="text-muted-foreground" />
+                      <div>
+                        <p className="text-[10px] text-muted-foreground leading-none">{l.label}</p>
+                        <p className="text-xs font-semibold text-slate-700">{l.val}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Features ── */}
+                <div className="flex-1 mb-4 space-y-1">
+                  {features.slice(0, 5).map((f) => (
+                    <div key={f} className="flex items-center gap-1.5 text-xs text-slate-700">
+                      <Check size={11} className="text-emerald-500 shrink-0" />
+                      {f}
+                    </div>
+                  ))}
+                  {features.length > 5 && (
+                    <p className="text-[11px] text-muted-foreground">+{features.length - 5} more features</p>
+                  )}
+                </div>
+
+                {/* ── Actions ── */}
+                <div className="flex gap-1.5 mt-auto">
+                  <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs"
+                    onClick={() => setEditTarget(tpl)}>
+                    <Pencil size={11} /> Edit
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                    onClick={() => setDeleteTarget(tpl)}>
+                    <Trash2 size={11} />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Form Modal ─────────────────────────────────────── */}
+      <PlanFormModal
+        open={createOpen || !!editTarget}
+        onClose={() => { setCreateOpen(false); setEditTarget(null); }}
+        defaultValues={editTarget ?? {}}
+        onSubmit={handleSubmit}
+        loading={createMutation.isPending || updateMutation.isPending}
+        isEdit={!!editTarget}
       />
 
-      {/* Create Modal */}
-      <AppModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        title="New Subscription Template"
-        size="lg"
-      >
-        <TemplateForm
-          onSubmit={(body) => createMutation.mutate(body)}
-          onCancel={() => setCreateOpen(false)}
-          loading={createMutation.isPending}
-        />
-      </AppModal>
-
-      {/* Edit Modal */}
-      <AppModal
-        open={!!editTarget}
-        onClose={() => setEditTarget(null)}
-        title="Edit Template"
-        size="lg"
-      >
-        <TemplateForm
-          defaultValues={editTarget ?? {}}
-          onSubmit={(body) => updateMutation.mutate({ id: editTarget.id, body })}
-          onCancel={() => setEditTarget(null)}
-          loading={updateMutation.isPending}
-          isEdit
-        />
-      </AppModal>
-
-      {/* Delete Confirm */}
+      {/* ── Delete Confirm ─────────────────────────────────── */}
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => deleteMutation.mutate(deleteTarget)}
         loading={deleteMutation.isPending}
-        title="Delete Template"
-        description={`Delete the "${deleteTarget?.name}" template? Schools already subscribed will not be affected.`}
+        title="Delete Plan"
+        description={`Delete the "${deleteTarget?.name}" plan? Institutes on this plan won't be affected immediately, but no new subscriptions can use it.`}
         confirmLabel="Delete"
         variant="destructive"
       />
@@ -231,114 +261,98 @@ export default function SubscriptionTemplatesPage() {
   );
 }
 
-// ─── Template Form ────────────────────────────────────────
-function TemplateForm({ defaultValues = {}, onSubmit, onCancel, loading, isEdit }) {
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm({
+// ─── Plan Form Modal ──────────────────────────────────────────────────────────
+function SectionLabel({ children }) {
+  return (
+    <p className="mt-4 mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground border-b pb-1.5">
+      {children}
+    </p>
+  );
+}
+
+function PlanFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit }) {
+  const { register, control, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
     defaultValues: {
-      name:            defaultValues.name            ?? '',
-      price_monthly:   defaultValues.price_monthly   ?? '',
-      duration_months: defaultValues.duration_months ?? 12,
-      max_students:    defaultValues.max_students    ?? '',
-      max_teachers:    defaultValues.max_teachers    ?? '',
-      features:        (defaultValues.features ?? []).join('\n'),
-      is_active:       defaultValues.is_active       ?? true,
+      is_active:       true,
+      features:        [],
+      ...defaultValues,
     },
   });
 
-  const [apiError, setApiError] = useState(null);
+  const selectedFeatures = watch('features') ?? [];
 
-  const submit = async (data) => {
-    setApiError(null);
-    try {
-      const body = {
-        name:            data.name,
-        price_monthly:   Number(data.price_monthly),
-        duration_months: Number(data.duration_months),
-        max_students:    data.max_students ? Number(data.max_students) : null,
-        max_teachers:    data.max_teachers ? Number(data.max_teachers) : null,
-        features:        data.features
-          ? data.features.split('\n').map((f) => f.trim()).filter(Boolean)
-          : [],
-        is_active: data.is_active,
-      };
-      await onSubmit(body);
-    } catch (e) {
-      setApiError(e?.response?.data?.message ?? 'Something went wrong');
+  const toggleFeature = (feature) => {
+    const current = selectedFeatures;
+    if (current.includes(feature)) {
+      setValue('features', current.filter((f) => f !== feature));
+    } else {
+      setValue('features', [...current, feature]);
     }
   };
 
+  const handleClose = () => { reset(); onClose(); };
+
   return (
-    <form onSubmit={handleSubmit(submit)} className="space-y-4">
-      {apiError && <ErrorAlert message={apiError} />}
+    <AppModal
+      open={open}
+      onClose={handleClose}
+      title={isEdit ? '✏️ Edit Plan' : '➕ New Plan'}
+      description={isEdit ? 'Update plan details' : 'Create a new subscription plan'}
+      size="xl"
+      footer={
+        <div className="flex justify-end gap-2 w-full">
+          <Button variant="outline" onClick={handleClose} disabled={loading}>Cancel</Button>
+          <FormSubmitButton loading={loading} label={isEdit ? 'Save Changes' : 'Create Plan'} loadingLabel="Saving…" onClick={handleSubmit(onSubmit)} />
+        </div>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-1">
+        <SectionLabel>Plan Identity</SectionLabel>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <InputField label="Plan Name" name="name" register={register} error={errors.name}
+            rules={{ required: 'Name is required' }} placeholder="Standard" required />
+          <InputField label="Code" name="code" register={register} placeholder="standard" />
+        </div>
+        <InputField label="Description" name="description" register={register} placeholder="Best for medium-size schools" />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <InputField
-          label="Plan Name"
-          placeholder="e.g. Premium"
-          error={errors.name?.message}
-          {...register('name', { required: 'Required' })}
-        />
-        <InputField
-          label="Monthly Price (PKR)"
-          type="number"
-          placeholder="e.g. 5000"
-          error={errors.price_monthly?.message}
-          {...register('price_monthly', { required: 'Required', min: { value: 0, message: 'Must be ≥ 0' } })}
-        />
-        <InputField
-          label="Duration (months)"
-          type="number"
-          placeholder="e.g. 12"
-          error={errors.duration_months?.message}
-          {...register('duration_months', { required: 'Required', min: { value: 1, message: 'At least 1 month' } })}
-        />
-        <div>{/* spacer */}</div>
-        <InputField
-          label="Max Students (leave blank = unlimited)"
-          type="number"
-          placeholder="e.g. 500"
-          error={errors.max_students?.message}
-          {...register('max_students')}
-        />
-        <InputField
-          label="Max Teachers (leave blank = unlimited)"
-          type="number"
-          placeholder="e.g. 50"
-          error={errors.max_teachers?.message}
-          {...register('max_teachers')}
-        />
-      </div>
+        <SectionLabel>Pricing</SectionLabel>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <InputField label="Monthly Price (PKR)" name="price_monthly" register={register} type="number" placeholder="5000" />
+          <InputField label="Yearly Price (PKR)"  name="price_yearly"  register={register} type="number" placeholder="50000" />
+          <InputField label="Setup Fee (PKR)"     name="setup_fee"     register={register} type="number" placeholder="0" />
+        </div>
+        <InputField label="Duration (months)" name="duration_months" register={register} type="number" placeholder="12" />
 
-      {/* Features textarea */}
-      <div>
-        <label className="mb-1 block text-sm font-medium">
-          Features <span className="text-xs text-muted-foreground">(one per line)</span>
-        </label>
-        <textarea
-          {...register('features')}
-          rows={5}
-          placeholder={'Fee Management\nAttendance Tracking\nExam Reports'}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring resize-none"
-        />
-      </div>
+        <SectionLabel>Limits</SectionLabel>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <InputField label="Max Students"  name="max_students"   register={register} type="number" placeholder="500" />
+          <InputField label="Max Teachers"  name="max_teachers"   register={register} type="number" placeholder="50" />
+          <InputField label="Max Branches"  name="max_branches"   register={register} type="number" placeholder="1" />
+          <InputField label="Storage (GB)"  name="max_storage_gb" register={register} type="number" placeholder="10" />
+        </div>
 
-      <CheckboxField
-        label="Active (visible to schools)"
-        name="is_active"
-        control={control}
-      />
+        <SectionLabel>Features</SectionLabel>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          {ALL_FEATURES.map((feature) => (
+            <label
+              key={feature}
+              className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted/40 transition-colors"
+            >
+              <input
+                type="checkbox"
+                className="size-4 accent-emerald-600"
+                checked={selectedFeatures.includes(feature)}
+                onChange={() => toggleFeature(feature)}
+              />
+              <span className="text-sm text-slate-700">{feature}</span>
+            </label>
+          ))}
+        </div>
 
-      <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
-        <FormSubmitButton loading={loading}>
-          {isEdit ? 'Save Changes' : 'Create Template'}
-        </FormSubmitButton>
-      </div>
-    </form>
+        <SectionLabel>Status</SectionLabel>
+        <SwitchField label="Plan Active" name="is_active" control={control}
+          hint="If disabled, no new subscriptions can be created on this plan" />
+      </form>
+    </AppModal>
   );
 }
