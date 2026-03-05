@@ -29,7 +29,9 @@ export default function StudentSyllabusPage() {
   const t = getPortalTerms(student?.institute_type);
   const classId  = student.class_id || 'class-001';
 
-  const subjects = DUMMY_SUBJECTS.filter((s) => s.class_id === classId && s.is_active !== false);
+  const subjects = student.syllabus?.length
+    ? student.syllabus
+    : DUMMY_SUBJECTS.filter((s) => s.class_id === classId && s.is_active !== false);
 
   const [expanded, setExpanded] = useState({});
   const [search,   setSearch]   = useState('');

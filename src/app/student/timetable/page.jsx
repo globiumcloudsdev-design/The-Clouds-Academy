@@ -9,17 +9,36 @@ import { getPortalTerms } from '@/constants/portalInstituteConfig';
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const SUBJECT_COLORS = {
-  'Mathematics':        'bg-blue-50   border-blue-200   text-blue-700',
-  'English Language':   'bg-violet-50 border-violet-200 text-violet-700',
-  'Urdu':               'bg-emerald-50 border-emerald-200 text-emerald-700',
-  'Science':            'bg-teal-50   border-teal-200   text-teal-700',
-  'Social Studies':     'bg-amber-50  border-amber-200  text-amber-700',
-  'Islamic Studies':    'bg-green-50  border-green-200  text-greenald-700',
-  'Computer Science':   'bg-cyan-50   border-cyan-200   text-cyan-700',
-  'Art & Craft':        'bg-pink-50   border-pink-200   text-pink-700',
-  'Physical Education': 'bg-orange-50 border-orange-200 text-orange-700',
-  'Break':              'bg-slate-50  border-slate-200  text-slate-400',
-  'Lunch Break':        'bg-slate-50  border-slate-200  text-slate-400',
+  // Academy / School core
+  'Mathematics':          'bg-blue-50   border-blue-200   text-blue-700',
+  'English':              'bg-violet-50 border-violet-200 text-violet-700',
+  'English Language':     'bg-violet-50 border-violet-200 text-violet-700',
+  'Urdu':                 'bg-emerald-50 border-emerald-200 text-emerald-700',
+  'Science':              'bg-teal-50   border-teal-200   text-teal-700',
+  'Social Studies':       'bg-amber-50  border-amber-200  text-amber-700',
+  'Islamic Studies':      'bg-green-50  border-green-200  text-green-700',
+  'Islamiat':             'bg-green-50  border-green-200  text-green-700',
+  'Computer Science':     'bg-cyan-50   border-cyan-200   text-cyan-700',
+  'Computer':             'bg-cyan-50   border-cyan-200   text-cyan-700',
+  'Art & Craft':          'bg-pink-50   border-pink-200   text-pink-700',
+  'Arts & Crafts':        'bg-pink-50   border-pink-200   text-pink-700',
+  'Physical Education':   'bg-orange-50 border-orange-200 text-orange-700',
+  'General Knowledge':    'bg-yellow-50 border-yellow-200 text-yellow-700',
+  'Pak. Studies':         'bg-lime-50   border-lime-200   text-lime-700',
+  // Coaching / College / University
+  'Physics':              'bg-sky-50    border-sky-200    text-sky-700',
+  'Chemistry':            'bg-teal-50   border-teal-200   text-teal-700',
+  'Biology':              'bg-green-50  border-green-200  text-green-700',
+  'Data Structures':      'bg-indigo-50 border-indigo-200 text-indigo-700',
+  'OOP (Java)':           'bg-violet-50 border-violet-200 text-violet-700',
+  'Database Systems':     'bg-cyan-50   border-cyan-200   text-cyan-700',
+  'Computer Networks':    'bg-blue-50   border-blue-200   text-blue-700',
+  'Discrete Mathematics': 'bg-amber-50  border-amber-200  text-amber-700',
+  'Revision':             'bg-slate-50  border-slate-200  text-slate-500',
+  // Break
+  'Break':                'bg-slate-50  border-slate-200  text-slate-400',
+  'Lunch Break':          'bg-slate-50  border-slate-200  text-slate-400',
+  'Assembly':             'bg-rose-50   border-rose-200   text-rose-400',
 };
 
 function getSubjectColor(subject) {
@@ -30,8 +49,9 @@ export default function StudentTimetablePage() {
   const { portalUser } = usePortalStore();
   const student = portalUser || DUMMY_STUDENT_PORTAL_USERS[0];
   const t = getPortalTerms(student?.institute_type);
+  // Use timetable directly from student object if present, else fall back to DUMMY_TIMETABLE
   const classId = student.class_id || 'class-001';
-  const timetable = DUMMY_TIMETABLE[classId] || {};
+  const timetable = student.timetable || DUMMY_TIMETABLE[classId] || {};
 
   // timetable data has { schedule: [{ day, periods }] } structure
   const scheduleMap = {};

@@ -5,7 +5,7 @@ import { NotebookPen, CalendarDays, BookOpen, ChevronDown, ChevronUp } from 'luc
 import usePortalStore from '@/store/portalStore';
 import {
   DUMMY_STUDENT_PORTAL_USERS,
-  DUMMY_TEACHER_HOMEWORK,
+  PORTAL_ALL_TEACHER_HW,
 } from '@/data/portalDummyData';
 import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { cn } from '@/lib/utils';
@@ -54,11 +54,11 @@ export default function StudentHomeworkPage() {
   const [subjectFilter, setSubjectFilter] = useState('All');
   const [expanded, setExpanded] = useState({});
 
-  // Use student's own homework if populated, else filter from teacher data by class
+  // Use student's own homework if populated, else search across all teacher data by class
   const allHomework =
     student.homework?.length
       ? student.homework
-      : DUMMY_TEACHER_HOMEWORK.filter((h) => h.class_id === classId);
+      : PORTAL_ALL_TEACHER_HW.filter((h) => h.class_id === classId);
 
   const filtered = allHomework.filter(
     (h) => subjectFilter === 'All' || h.subject === subjectFilter,

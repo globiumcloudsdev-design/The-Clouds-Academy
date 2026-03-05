@@ -8,7 +8,7 @@ import {
 import usePortalStore from '@/store/portalStore';
 import {
   DUMMY_STUDENT_PORTAL_USERS,
-  DUMMY_TEACHER_ASSIGNMENTS,
+  PORTAL_ALL_TEACHER_ASSIGNMENTS,
 } from '@/data/portalDummyData';
 import { getPortalTerms } from '@/constants/portalInstituteConfig';
 import { Badge } from '@/components/ui/badge';
@@ -60,11 +60,11 @@ export default function StudentAssignmentsPage() {
   const [expanded,  setExpanded]  = useState({});
   const [filter,    setFilter]    = useState('');
 
-  // Use student's own assignments if populated, else fall back to teacher assignments filtered by class
+  // Use student's own assignments if populated, else fall back to combined teacher data filtered by class
   const baseAssignments =
     student.assignments?.length
       ? student.assignments
-      : DUMMY_TEACHER_ASSIGNMENTS.filter((a) => a.class_id === classId);
+      : PORTAL_ALL_TEACHER_ASSIGNMENTS.filter((a) => a.class_id === classId);
 
   const assignments = baseAssignments
     .map((a) => ({ ...a, status: submitted[a.id] ? 'submitted' : a.status }))
