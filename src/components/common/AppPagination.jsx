@@ -33,7 +33,7 @@ export default function AppPagination({ page, totalPages, onPageChange }) {
   return (
     <Pagination>
       <PaginationContent>
-        <PaginationItem>
+        <PaginationItem key="prev">
           <PaginationPrevious
             onClick={() => page > 1 && onPageChange(page - 1)}
             className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
@@ -58,7 +58,7 @@ export default function AppPagination({ page, totalPages, onPageChange }) {
           ),
         )}
 
-        <PaginationItem>
+        <PaginationItem key="next">
           <PaginationNext
             onClick={() => page < totalPages && onPageChange(page + 1)}
             className={page === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
