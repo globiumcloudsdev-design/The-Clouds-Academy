@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { CheckCircle, X, Zap, Crown, Building2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
+import EnrollmentModal from './EnrollmentModal';
 
 const PLANS = [
   {
@@ -111,6 +111,13 @@ function PriceTag({ plan, yearly }) {
 
 export default function PricingSection() {
   const [yearly, setYearly] = useState(false);
+  const [isEnrollmentOpen, setIsEnrollmentOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  const handlePlanSelect = (plan) => {
+    setSelectedPlan(plan);
+    setIsEnrollmentOpen(true);
+  };
 
   return (
     <section id="pricing" className="py-24 bg-gradient-to-b from-slate-950 to-indigo-950 relative overflow-hidden">
@@ -173,19 +180,18 @@ export default function PricingSection() {
 
                   <PriceTag plan={plan} yearly={yearly} />
 
-                  <Link href="/login">
-                    <Button
-                      className={`w-full font-semibold mb-6 ${
-                        plan.popular
-                          ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:opacity-90'
-                          : plan.id === 'enterprise'
-                          ? `bg-gradient-to-r ${plan.gradient} text-white hover:opacity-90`
-                          : 'bg-slate-700 text-white hover:bg-slate-600 border border-white/20'
-                      }`}
-                    >
-                      {plan.id === 'enterprise' ? 'Contact Sales' : 'Start Free Trial'}
-                    </Button>
-                  </Link>
+                  <Button
+                    onClick={() => handlePlanSelect(plan)}
+                    className={`w-full font-semibold mb-6 ${
+                      plan.popular
+                        ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:opacity-90'
+                        : plan.id === 'enterprise'
+                        ? `bg-gradient-to-r ${plan.gradient} text-white hover:opacity-90`
+                        : 'bg-slate-700 text-white hover:bg-slate-600 border border-white/20'
+                    }`}
+                  >
+                    {plan.id === 'enterprise' ? 'Contact Sales' : 'Start Free Trial'}
+                  </Button>
 
                   <div className="space-y-2.5">
                     {plan.features.map((f) => (
@@ -212,6 +218,12 @@ export default function PricingSection() {
           All plans include 14-day free trial · No credit card required · Cancel anytime
         </p>
       </div>
+
+      <EnrollmentModal
+        isOpen={isEnrollmentOpen}
+        onClose={() => setIsEnrollmentOpen(false)}
+        selectedPlan={selectedPlan}
+      />
     </section>
   );
 }
