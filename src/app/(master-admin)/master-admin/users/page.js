@@ -17,14 +17,8 @@ import { Badge }  from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const ROLE_OPTIONS = [
-  { value: 'super_admin',   label: '👑 Super Admin'   },
-  { value: 'master_admin',  label: '⚙️ Master Admin'  },
-  { value: 'school_admin',  label: '🏢 School Admin'  },
-  { value: 'teacher',       label: '👩‍🏫 Teacher'      },
-  { value: 'accountant',    label: '💼 Accountant'    },
-  { value: 'receptionist',  label: '📋 Receptionist'  },
-  { value: 'librarian',     label: '📚 Librarian'     },
+const MASTER_ADMIN_ROLE_OPTIONS = [
+  { value: 'master_admin', label: '⚙️ Master Admin' },
 ];
 
 const STATUS_OPTIONS = [
@@ -196,8 +190,18 @@ export default function MasterUsersPage() {
   });
 
   const handleFormSubmit = (body) => {
+    const payload = {
+      first_name: body.first_name,
+      last_name: body.last_name,
+      email: body.email,
+      phone: body.phone,
+      is_active: body.is_active,
+      role_code: 'master_admin',
+      ...(body.password ? { password: body.password } : {}),
+    };
+
     if (editTarget) {
-      masterAdminService.updateUser?.(editTarget.id, body)
+      masterAdminService.updateUser?.(editTarget.id, payload)
         ?.then(() => {
           qc.invalidateQueries({ queryKey: ['master-users'] });
           toast.success('User updated');
@@ -205,7 +209,7 @@ export default function MasterUsersPage() {
         })
         .catch((e) => toast.error(e?.response?.data?.message ?? 'Update failed'));
     } else {
-      createMutation.mutate(body);
+      createMutation.mutate(payload);
     }
   };
 
@@ -232,7 +236,7 @@ export default function MasterUsersPage() {
           { label: 'Total',    value: totalCount, icon: Users,      bg: 'bg-blue-50',    color: 'text-blue-600'    },
           { label: 'Active',   value: active,     icon: UserCheck,  bg: 'bg-emerald-50', color: 'text-emerald-600' },
           { label: 'Inactive', value: inactive,   icon: UserX,      bg: 'bg-red-50',     color: 'text-red-500'     },
-          { label: 'Roles',    value: ROLE_OPTIONS.length, icon: ShieldCheck, bg: 'bg-violet-50', color: 'text-violet-600' },
+          { label: 'Roles',    value: MASTER_ADMIN_ROLE_OPTIONS.length, icon: ShieldCheck, bg: 'bg-violet-50', color: 'text-violet-600' },
         ].map((s) => (
           <div key={s.label} className="flex items-center gap-3 rounded-xl border bg-white p-3 shadow-sm">
             <div className={cn('rounded-lg p-2', s.bg)}>
@@ -322,14 +326,6 @@ function UserFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit
     },
   });
 
-  // Fetch schools for dropdown
-  const { data: schoolRows } = useQuery({
-    queryKey: ['master-schools-all'],
-    queryFn: () => masterAdminService.getSchools({ limit: 100 }).then((r) => r?.data?.rows ?? r?.data ?? []),
-    enabled: open,
-  });
-  const schoolOptions = (schoolRows ?? []).map((s) => ({ value: s.id, label: s.name }));
-
   const handleClose = () => { reset(); onClose(); };
 
   return (
@@ -337,7 +333,7 @@ function UserFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit
       open={open}
       onClose={handleClose}
       title={isEdit ? '✏️ Edit User' : '➕ Add New User'}
-      description={isEdit ? 'Update user information' : 'Create a new user on the platform'}
+      description={isEdit ? 'Update user information' : 'Create a new master-admin user on the platform'}
       size="lg"
       footer={
         <div className="flex justify-end gap-2 w-full">
@@ -374,7 +370,7 @@ function UserFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit
 
         <SectionLabel>Role &amp; Access</SectionLabel>
         <div className="grid grid-cols-1 gap-3">
-          <SelectField label="Role" name="role_code" control={control} options={ROLE_OPTIONS.filter(r => r.value === 'master_admin')} placeholder="Select role" disabled />
+          <SelectField label="Role" name="role_code" control={control} options={MASTER_ADMIN_ROLE_OPTIONS} placeholder="Select role" disabled />
         </div>
         <SwitchField label="Active" name="is_active" control={control}
           hint="User can log in and access the platform" />

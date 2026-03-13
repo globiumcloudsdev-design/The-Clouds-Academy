@@ -65,6 +65,44 @@ export default function ClassForm({
         placeholder="Select academic year"
         required
       />
+{branchOptions.length > 0 && (
+        <SelectField
+          label="Branch"
+          name="branch_id"
+          control={control}
+error={errors.branch_id}
+          options={branchOptions}
+          placeholder="Select branch"
+        />
+      )}
+
+      <InputField
+        label="Section"
+        name="section"
+        register={register}
+        error={errors.section}
+        placeholder="e.g. A, B, Alpha"
+      />
+      <InputField
+        label="Capacity"
+        name="capacity"
+        register={register}
+        error={errors.capacity}
+        type="number"
+        min="1"
+        placeholder="e.g. 50"
+      />
+      <SelectField
+        label="Status"
+        name="status"
+        control={control}
+        error={errors.status}
+        options={[
+          { value: 'active', label: 'Active' },
+          { value: 'inactive', label: 'Inactive' }
+        ]}
+        required
+      />
       <SelectField
         label="Class Teacher"
         name="class_teacher_id"
@@ -73,16 +111,6 @@ export default function ClassForm({
         options={teacherOptions}
         placeholder="Select class teacher"
       />
-      {branchOptions.length > 0 && (
-        <SelectField
-          label="Branch"
-          name="branch_id"
-          control={control}
-          error={errors.branch_id}
-          options={branchOptions}
-          placeholder="Select branch"
-        />
-      )}
 
       <div className="flex justify-end gap-3 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
