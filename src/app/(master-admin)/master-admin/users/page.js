@@ -17,13 +17,8 @@ import { Badge }  from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const ROLE_OPTIONS = [
-  { value: 'super_admin',   label: '👑 Super Admin'   },
-  { value: 'school_admin',  label: '🏢 School Admin'  },
-  { value: 'teacher',       label: '👩‍🏫 Teacher'      },
-  { value: 'accountant',    label: '💼 Accountant'    },
-  { value: 'receptionist',  label: '📋 Receptionist'  },
-  { value: 'librarian',     label: '📚 Librarian'     },
+const MASTER_ADMIN_ROLE_OPTIONS = [
+  { value: 'master_admin', label: '⚙️ Master Admin' },
 ];
 
 const STATUS_OPTIONS = [
@@ -33,6 +28,7 @@ const STATUS_OPTIONS = [
 
 const ROLE_BADGE = {
   super_admin:  'bg-purple-100 text-purple-700',
+  master_admin: 'bg-orange-100 text-orange-700',
   school_admin: 'bg-blue-100 text-blue-700',
   teacher:      'bg-emerald-100 text-emerald-700',
   accountant:   'bg-amber-100 text-amber-700',
@@ -194,8 +190,18 @@ export default function MasterUsersPage() {
   });
 
   const handleFormSubmit = (body) => {
+    const payload = {
+      first_name: body.first_name,
+      last_name: body.last_name,
+      email: body.email,
+      phone: body.phone,
+      is_active: body.is_active,
+      role_code: 'master_admin',
+      ...(body.password ? { password: body.password } : {}),
+    };
+
     if (editTarget) {
-      masterAdminService.updateUser?.(editTarget.id, body)
+      masterAdminService.updateUser?.(editTarget.id, payload)
         ?.then(() => {
           qc.invalidateQueries({ queryKey: ['master-users'] });
           toast.success('User updated');
@@ -203,7 +209,7 @@ export default function MasterUsersPage() {
         })
         .catch((e) => toast.error(e?.response?.data?.message ?? 'Update failed'));
     } else {
-      createMutation.mutate(body);
+      createMutation.mutate(payload);
     }
   };
 
@@ -230,7 +236,7 @@ export default function MasterUsersPage() {
           { label: 'Total',    value: totalCount, icon: Users,      bg: 'bg-blue-50',    color: 'text-blue-600'    },
           { label: 'Active',   value: active,     icon: UserCheck,  bg: 'bg-emerald-50', color: 'text-emerald-600' },
           { label: 'Inactive', value: inactive,   icon: UserX,      bg: 'bg-red-50',     color: 'text-red-500'     },
-          { label: 'Roles',    value: ROLE_OPTIONS.length, icon: ShieldCheck, bg: 'bg-violet-50', color: 'text-violet-600' },
+          { label: 'Roles',    value: MASTER_ADMIN_ROLE_OPTIONS.length, icon: ShieldCheck, bg: 'bg-violet-50', color: 'text-violet-600' },
         ].map((s) => (
           <div key={s.label} className="flex items-center gap-3 rounded-xl border bg-white p-3 shadow-sm">
             <div className={cn('rounded-lg p-2', s.bg)}>
@@ -315,17 +321,10 @@ function UserFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit
   const { register, control, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: {
       is_active: true,
+      role_code: 'master_admin',
       ...defaultValues,
     },
   });
-
-  // Fetch schools for dropdown
-  const { data: schoolRows } = useQuery({
-    queryKey: ['master-schools-all'],
-    queryFn: () => masterAdminService.getSchools({ limit: 100 }).then((r) => r?.data?.rows ?? r?.data ?? []),
-    enabled: open,
-  });
-  const schoolOptions = (schoolRows ?? []).map((s) => ({ value: s.id, label: s.name }));
 
   const handleClose = () => { reset(); onClose(); };
 
@@ -334,7 +333,7 @@ function UserFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit
       open={open}
       onClose={handleClose}
       title={isEdit ? '✏️ Edit User' : '➕ Add New User'}
-      description={isEdit ? 'Update user information' : 'Create a new user on the platform'}
+      description={isEdit ? 'Update user information' : 'Create a new master-admin user on the platform'}
       size="lg"
       footer={
         <div className="flex justify-end gap-2 w-full">
@@ -370,9 +369,8 @@ function UserFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit
           placeholder="Minimum 8 characters" type="password" required={!isEdit} />
 
         <SectionLabel>Role &amp; Access</SectionLabel>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <SelectField label="Role" name="role_code" control={control} options={ROLE_OPTIONS} placeholder="Select role" />
-          <SelectField label="Institute" name="school_id" control={control} options={schoolOptions} placeholder="Select institute" />
+        <div className="grid grid-cols-1 gap-3">
+          <SelectField label="Role" name="role_code" control={control} options={MASTER_ADMIN_ROLE_OPTIONS} placeholder="Select role" disabled />
         </div>
         <SwitchField label="Active" name="is_active" control={control}
           hint="User can log in and access the platform" />

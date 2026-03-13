@@ -4,22 +4,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, CreditCard,
-  LogOut, FileText, Menu, X, ShieldCheck, Mail, BarChart3, Bell, BellRing,
+  LogOut, FileText, Menu, X, ShieldCheck, Mail, BarChart3, BellRing,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Cookies from 'js-cookie';
 
 import useAuthStore from '@/store/authStore';
 import { authService } from '@/services';
-import { DUMMY_INSTITUTES_REPORT } from '@/data/masterAdminDummyData';
-import {
-  AppModal, InputField, SelectField, TextareaField, FormSubmitButton, DatePickerField,
-} from '@/components/common';
 import { cn } from '@/lib/utils';
 
 const NAV = [
@@ -33,31 +28,11 @@ const NAV = [
   { href: '/master-admin/reports',                label: 'Reports',         icon: BarChart3       }, 
    { href: '/master-admin/notifications',           label: 'Notifications',   icon: BellRing        },];
 
-// ── Notification recipient options ──────────────────────────────────────────
-const NOTIF_RECIPIENT_OPTIONS = [
-  { value: 'all', label: 'All Institutes' },
-  ...DUMMY_INSTITUTES_REPORT.map((i) => ({
-    value: i.id.toString(),
-    label: `${i.name} — ${i.city}`,
-  })),
-];
-
-const NOTIF_TYPE_OPTIONS = [
-  { value: 'info',         label: 'Info / General'       },
-  { value: 'announcement', label: 'Announcement'         },
-  { value: 'warning',      label: 'Warning'              },
-  { value: 'alert',        label: 'Urgent Alert'         },
-  { value: 'reminder',     label: 'Reminder'             },
-  { value: 'payment',      label: 'Payment / Invoice'    },
-  { value: 'subscription', label: 'Subscription Notice'  },
-];
-
 export default function MasterAdminLayout({ children }) {
   const pathname     = usePathname();
   const router       = useRouter();
   const logout       = useAuthStore((s) => s.logout);
   const [open,       setOpen]      = useState(false);
-  const [notifOpen,  setNotifOpen] = useState(false);
 
   const handleLogout = async () => {
     try { await authService.logout(); } catch (_) {}
@@ -146,141 +121,18 @@ export default function MasterAdminLayout({ children }) {
             The Clouds Academy — Admin Panel
           </span>
 
-          {/* Send Notification button */}
-          <button
-            onClick={() => setNotifOpen(true)}
+          <Link
+            href="/master-admin/notifications"
             className="flex items-center gap-1.5 rounded-lg border bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-700 px-3 py-1.5 text-xs font-semibold transition-colors"
-            title="Send notification to institute admins"
+            title="View master-admin notifications"
           >
-            <Bell size={13} /> Send Notification
-          </button>
+            <BellRing size={20} /> 
+          </Link>
         </header>
 
         {/* Page content */}
         <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
       </div>
-
-      {/* ── Send Notification Modal ──────────────────── */}
-      <SendNotificationModal open={notifOpen} onClose={() => setNotifOpen(false)} />
     </div>
-  );
-}
-
-// ── SendNotificationModal ─────────────────────────────────────────────────────
-function SendNotificationModal({ open, onClose }) {
-  const [sending, setSending] = useState(false);
-  const {
-    register, control, handleSubmit, reset, watch,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      recipients:   'all',
-      type:         'info',
-      subject:      '',
-      message:      '',
-      schedule_at:  null,
-    },
-  });
-
-  const recipients = watch('recipients');
-  const recipientLabel =
-    recipients === 'all'
-      ? 'All Institutes'
-      : DUMMY_INSTITUTES_REPORT.find((i) => i.id.toString() === recipients)?.name ?? recipients;
-
-  const handleSend = (data) => {
-    if (!data.subject?.trim()) { toast.error('Subject is required'); return; }
-    if (!data.message?.trim()) { toast.error('Message is required'); return; }
-    setSending(true);
-    setTimeout(() => {
-      setSending(false);
-      onClose();
-      reset();
-      const scheduled = data.schedule_at ? ` — scheduled for ${data.schedule_at}` : '';
-      toast.success(`Notification sent to: ${recipientLabel}${scheduled}`);
-    }, 1000);
-  };
-
-  const handleClose = () => { onClose(); reset(); };
-
-  return (
-    <AppModal
-      open={open}
-      onClose={handleClose}
-      title="Send Notification"
-      description="Send a message or alert to one institute or all institutes"
-      size="md"
-      footer={
-        <div className="flex justify-end gap-2 w-full">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={sending}
-            className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <FormSubmitButton
-            loading={sending}
-            label="Send Notification"
-            loadingLabel="Sending…"
-            onClick={handleSubmit(handleSend)}
-          />
-        </div>
-      }
-    >
-      <form onSubmit={handleSubmit(handleSend)} className="space-y-4">
-
-        {/* Recipient */}
-        <SelectField
-          label="Send To"
-          name="recipients"
-          control={control}
-          options={NOTIF_RECIPIENT_OPTIONS}
-          placeholder="Select recipient…"
-          required
-        />
-
-        {/* Type */}
-        <SelectField
-          label="Notification Type"
-          name="type"
-          control={control}
-          options={NOTIF_TYPE_OPTIONS}
-          placeholder="Select type…"
-          required
-        />
-
-        {/* Subject */}
-        <InputField
-          label="Subject"
-          name="subject"
-          register={register}
-          error={errors.subject}
-          placeholder="Notification subject line…"
-          required
-        />
-
-        {/* Message */}
-        <TextareaField
-          label="Message"
-          name="message"
-          register={register}
-          error={errors.message}
-          rows={5}
-          placeholder="Write the notification message here…"
-          required
-        />
-
-        {/* Optional schedule */}
-        <DatePickerField
-          label="Schedule Date (optional — leave blank to send now)"
-          name="schedule_at"
-          control={control}
-          placeholder="Send immediately or pick a date"
-        />
-
-      </form>
-    </AppModal>
   );
 }
