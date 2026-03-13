@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ROLE_OPTIONS = [
   { value: 'super_admin',   label: '👑 Super Admin'   },
+  { value: 'master_admin',  label: '⚙️ Master Admin'  },
   { value: 'school_admin',  label: '🏢 School Admin'  },
   { value: 'teacher',       label: '👩‍🏫 Teacher'      },
   { value: 'accountant',    label: '💼 Accountant'    },
@@ -33,6 +34,7 @@ const STATUS_OPTIONS = [
 
 const ROLE_BADGE = {
   super_admin:  'bg-purple-100 text-purple-700',
+  master_admin: 'bg-orange-100 text-orange-700',
   school_admin: 'bg-blue-100 text-blue-700',
   teacher:      'bg-emerald-100 text-emerald-700',
   accountant:   'bg-amber-100 text-amber-700',
@@ -315,6 +317,7 @@ function UserFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit
   const { register, control, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: {
       is_active: true,
+      role_code: 'master_admin',
       ...defaultValues,
     },
   });
@@ -370,9 +373,8 @@ function UserFormModal({ open, onClose, defaultValues, onSubmit, loading, isEdit
           placeholder="Minimum 8 characters" type="password" required={!isEdit} />
 
         <SectionLabel>Role &amp; Access</SectionLabel>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <SelectField label="Role" name="role_code" control={control} options={ROLE_OPTIONS} placeholder="Select role" />
-          <SelectField label="Institute" name="school_id" control={control} options={schoolOptions} placeholder="Select institute" />
+        <div className="grid grid-cols-1 gap-3">
+          <SelectField label="Role" name="role_code" control={control} options={ROLE_OPTIONS.filter(r => r.value === 'master_admin')} placeholder="Select role" disabled />
         </div>
         <SwitchField label="Active" name="is_active" control={control}
           hint="User can log in and access the platform" />
