@@ -3,130 +3,48 @@
  */
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import {
-  LayoutDashboard, Building2, Users, CreditCard,
-  LogOut, FileText, Menu, X, ShieldCheck, Mail, BarChart3, BellRing,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import Cookies from 'js-cookie';
+import { Menu, BellRing } from 'lucide-react';
 
-import useAuthStore from '@/store/authStore';
-import { authService } from '@/services';
-import { cn } from '@/lib/utils';
-
-const NAV = [
-  { href: '/master-admin',                        label: 'Dashboard',       icon: LayoutDashboard },
-  { href: '/master-admin/schools',                label: 'Institutes',      icon: Building2       },
-  { href: '/master-admin/subscriptions',          label: 'Subscriptions',   icon: CreditCard      },
-  { href: '/master-admin/subscription-templates', label: 'Sub. Templates',  icon: FileText        },
-  { href: '/master-admin/roles',                  label: 'Roles',           icon: ShieldCheck     },
-  { href: '/master-admin/users',                  label: 'Users',           icon: Users           },
-  { href: '/master-admin/emails',                 label: 'Bulk Emails',     icon: Mail            },
-  { href: '/master-admin/reports',                label: 'Reports',         icon: BarChart3       }, 
-   { href: '/master-admin/notifications',           label: 'Notifications',   icon: BellRing        },];
+import useUiStore from '@/store/uiStore';
+import Sidebar from '@/components/layout/Sidebar';
+import { Button } from '@/components/ui/button';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
 export default function MasterAdminLayout({ children }) {
-  const pathname     = usePathname();
-  const router       = useRouter();
-  const logout       = useAuthStore((s) => s.logout);
-  const [open,       setOpen]      = useState(false);
-
-  const handleLogout = async () => {
-    try { await authService.logout(); } catch (_) {}
-    logout();
-    Cookies.remove('role_code');
-    router.replace('/login');
-    toast.success('Logged out');
-  };
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
 
   return (
     <div className="flex min-h-screen bg-background">
-
-      {/* ── Mobile overlay ── */}
-      {open && (
-        <div
-          className="fixed inset-0 z-20 bg-black/50 md:hidden"
-          onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* ── Sidebar ── */}
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-30 flex w-56 flex-col bg-[hsl(var(--sidebar-bg))] text-[hsl(var(--sidebar-fg))] transition-transform duration-200',
-          open ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-        )}
-      >
-        {/* Logo + close (mobile only) */}
-        <div className="flex h-16 items-center justify-between border-b border-white/10 px-5">
-          <span className="font-bold text-sm">☁ Master Admin</span>
-          <button
-            onClick={() => setOpen(false)}
-            className="rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white md:hidden"
-            aria-label="Close sidebar"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || (href !== '/master-admin' && pathname.startsWith(href));
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                  active
-                    ? 'bg-[hsl(var(--sidebar-accent))] text-white'
-                    : 'text-white/70 hover:bg-[hsl(var(--sidebar-accent))] hover:text-white',
-                )}
-              >
-                <Icon size={16} />{label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Logout */}
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 border-t border-white/10 px-5 py-4 text-sm text-white/60 hover:text-white"
-        >
-          <LogOut size={16} /> Logout
-        </button>
-      </aside>
+      <Sidebar />
 
       {/* ── Main content ── */}
-      <div className="flex flex-1 flex-col md:ml-56 min-w-0">
-
+      <div className="flex flex-1 flex-col md:ml-64 min-w-0">
         {/* Header */}
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-background px-4 sm:px-6">
-          {/* Hamburger — mobile only */}
-          <button
-            onClick={() => setOpen(true)}
-            className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
-            aria-label="Open sidebar"
+        <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur sm:px-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="md:hidden"
+            aria-label="Toggle sidebar"
           >
             <Menu size={20} />
-          </button>
+          </Button>
+
           <span className="flex-1 text-sm font-medium text-muted-foreground truncate">
             The Clouds Academy — Admin Panel
           </span>
 
+          <ThemeToggle />
+
           <Link
             href="/master-admin/notifications"
-            className="flex items-center gap-1.5 rounded-lg border bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-700 px-3 py-1.5 text-xs font-semibold transition-colors"
-            title="View master-admin notifications"
+            className="inline-flex items-center gap-2 rounded-lg border bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 dark:border-amber-500/30 dark:text-amber-400 px-3 py-1.5 text-xs font-semibold transition-colors"
+            title="View Notifications"
           >
-            <BellRing size={20} /> 
+            <BellRing size={14} />
+            View Notifications
           </Link>
         </header>
 

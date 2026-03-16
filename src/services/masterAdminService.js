@@ -1,25 +1,7 @@
 /**
  * Master Admin API Service
  * All calls require MASTER_ADMIN role (verified by backend).
- *
- * GET    /master-admin/stats
- * GET    /master-admin/schools
- * POST   /master-admin/schools
- * GET    /master-admin/schools/:id
- * PUT    /master-admin/schools/:id
- * PATCH  /master-admin/schools/:id/status
- * DELETE /master-admin/schools/:id
- *
- * GET    /master-admin/subscriptions
- * POST   /master-admin/subscriptions
- * GET    /master-admin/subscriptions/:id
- * PUT    /master-admin/subscriptions/:id
- * PATCH  /master-admin/subscriptions/:id/cancel
- *
- * GET    /master-admin/users
- * GET    /master-admin/users/:id
  */
-
 import api from '@/lib/api';
 import { buildQuery } from '@/lib/utils';
 import { withFallback } from '@/lib/withFallback';
@@ -94,6 +76,18 @@ export const masterAdminService = {
   getUserById: (id) =>
     api.get(`/master-admin/users/${id}`).then((r) => r.data),
 
+  createUser: (body) =>
+    api.post('/master-admin/users', body).then((r) => r.data),
+
+  updateUser: (id, body) =>
+    api.put(`/master-admin/users/${id}`, body).then((r) => r.data),
+
+  toggleUserStatus: (id, is_active) =>
+    api.patch(`/master-admin/users/${id}/status`, { is_active }).then((r) => r.data),
+
+  deleteUser: (id) =>
+    api.delete(`/master-admin/users/${id}`).then((r) => r.data),
+
   // ─── Subscription Templates ────────────────────────────────────
   getSubscriptionTemplates: (filters = {}) =>
     withFallback(
@@ -116,3 +110,4 @@ export const masterAdminService = {
   deleteSubscriptionTemplate: (id) =>
     api.delete(`/master-admin/subscription-templates/${id}`).then((r) => r.data),
 };
+

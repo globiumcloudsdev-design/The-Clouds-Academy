@@ -33,16 +33,44 @@ const STATUS_OPTIONS = [
 const normalizeClassPayload = (body, activeBranchId) => {
   const payload = {
     name: body.name?.trim(),
-    academic_year_id: body.academic_year_id,
+    academic_year_id: body.academic_year_id ? String(body.academic_year_id) : undefined,
     grade_level: body.grade_level === '' || body.grade_level == null ? undefined : Number(body.grade_level),
     section: body.section?.trim() || undefined,
     capacity: body.capacity === '' || body.capacity == null ? undefined : Number(body.capacity),
-    class_teacher_id: body.class_teacher_id || undefined,
+    class_teacher_id: body.class_teacher_id ? String(body.class_teacher_id) : undefined,
     is_active: body.status === 'active',
-    branch_id: body.branch_id || activeBranchId || undefined,
+    branch_id: body.branch_id ? String(body.branch_id) : activeBranchId || undefined,
   };
 
   return Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined));
+};
+
+const normalizeClassRecord = (item, teacherMap) => {
+  const sectionsCount =
+    item.sections_count ??
+    item.section_count ??
+    item.sections?.length ??
+    0;
+
+  const classTeacherName =
+    item.class_teacher_name ??
+    item.class_teacher?.name ??
+    item.class_teacher?.full_name ??
+    (typeof item.class_teacher === 'string' ? item.class_teacher : undefined) ??
+    teacherMap.get(String(item.class_teacher_id ?? '')) ??
+    null;
+
+  return {
+    ...item,
+    academic_year_id: item.academic_year_id ? String(item.academic_year_id) : '',
+    branch_id: item.branch_id ? String(item.branch_id) : '',
+    class_teacher_id: item.class_teacher_id ? String(item.class_teacher_id) : '',
+    section: item.section ?? item.section_name ?? '',
+    capacity: item.capacity ?? item.max_capacity ?? null,
+    sections_count: sectionsCount,
+    student_count: item.student_count ?? item.students_count ?? 0,
+    class_teacher_name: classTeacherName,
+  };
 };
 
 const buildColumns = (onEdit, onDelete, router) => [
@@ -51,7 +79,7 @@ const buildColumns = (onEdit, onDelete, router) => [
   { accessorKey: 'section', header: 'Section', cell: ({ getValue }) => <Badge variant="outline">{getValue() ?? '—'}</Badge> },
   { accessorKey: 'capacity', header: 'Capacity', cell: ({ getValue }) => getValue() ?? '—' },
   { accessorKey: 'class_teacher_id', header: 'Class Teacher', cell: ({ row }) => row.original.class_teacher_name ?? row.original.class_teacher_id ?? 'None' },
-  { id: 'sections', header: 'Sections', cell: ({ row }) => <span className="text-sm">{row.original.sections?.length ?? 0}</span> },
+  { id: 'sections', header: 'Sections', cell: ({ row }) => <span className="text-sm">{row.original.sections_count ?? row.original.sections?.length ?? 0}</span> },
   { id: 'students', header: 'Students', cell: ({ row }) => <span className="text-sm">{row.original.student_count ?? 0}</span> },
   { accessorKey: 'is_active', header: 'Status', cell: ({ getValue }) => <StatusBadge status={getValue() !== false ? 'active' : 'inactive'} /> },
   {
@@ -69,7 +97,7 @@ export default function ClassesPage() {
 
   const canCreate = useAuthStore((s) => s.canDo(PERMISSIONS.CLASS_CREATE));
   const canDelete = useAuthStore((s) => s.canDo(PERMISSIONS.CLASS_DELETE));
-  const { activeBranchId } = useUIStore();
+  const { activeBranchId, activeAcademicYearId } = useUIStore();
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -105,15 +133,26 @@ const { data: yearsData }   = useQuery({ queryKey: ['academic-years-all'], query
     queryFn: () => branchService.getAll(),
   });
 
-  const classes             = extractRows(data);
+const academicYearOptions = toOptions(yearsData?.data ?? [], (y) => y.name);
+  const teacherOptions = useMemo(() => toOptions(extractRows(teachersData), (t) => `${t.first_name || ''} ${t.last_name || ''}`.trim() || (t.employee_id || 'Unnamed')), [teachersData]);
+  const branchOptions = useMemo(() => toOptions(extractRows(branchesData), (b) => b.name), [branchesData]);
+  const teacherMap = useMemo(
+    () => new Map(teacherOptions.map((teacher) => [String(teacher.value), teacher.label])),
+    [teacherOptions],
+  );
+  const classes = useMemo(
+    () => extractRows(data).map((item) => normalizeClassRecord(item, teacherMap)),
+    [data, teacherMap],
+  );
   const totalPages          = extractPages(data);
   const total               = data?.data?.total ?? classes.length;
   const activeCount         = classes.filter((c) => c.is_active !== false).length;
   const inactiveCount       = classes.length - activeCount;
-const academicYearOptions = toOptions(yearsData?.data ?? [], (y) => y.name);
-
-  const teacherOptions = useMemo(() => toOptions(extractRows(teachersData), (t) => `${t.first_name || ''} ${t.last_name || ''}`.trim() || (t.employee_id || 'Unnamed')), [teachersData]);
-  const branchOptions = useMemo(() => toOptions(extractRows(branchesData), (b) => b.name), [branchesData]);
+  const createDefaults = useMemo(() => ({
+    status: 'active',
+    branch_id: activeBranchId ? String(activeBranchId) : branchOptions[0]?.value ?? '',
+    academic_year_id: activeAcademicYearId ? String(activeAcademicYearId) : academicYearOptions[0]?.value ?? '',
+  }), [activeAcademicYearId, activeBranchId, academicYearOptions, branchOptions]);
 
   const createMutation = useMutation({
     mutationFn: classService.create,
@@ -150,14 +189,14 @@ const academicYearOptions = toOptions(yearsData?.data ?? [], (y) => y.name);
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[
-          { label: 'Total Classes', value: total, bg: 'bg-blue-50', color: 'text-blue-600' },
-          { label: 'Active', value: activeCount, bg: 'bg-emerald-50', color: 'text-emerald-600' },
-          { label: 'Inactive', value: inactiveCount, bg: 'bg-red-50', color: 'text-red-500' },
+          { label: 'Total Classes', value: total,         bg: 'bg-blue-500/10',    color: 'text-blue-500'    },
+          { label: 'Active',        value: activeCount,   bg: 'bg-emerald-500/10', color: 'text-emerald-500' },
+          { label: 'Inactive',      value: inactiveCount, bg: 'bg-red-500/10',     color: 'text-red-500'     },
         ].map((item) => (
-          <div key={item.label} className="flex items-center justify-between rounded-xl border bg-white p-4 shadow-sm">
+          <div key={item.label} className="flex items-center justify-between rounded-xl border bg-card p-4 shadow-sm">
             <div>
               <p className="text-sm text-muted-foreground">{item.label}</p>
-              <p className="mt-2 text-4xl font-bold leading-none text-slate-900">{isLoading ? '—' : item.value}</p>
+              <p className="mt-2 text-4xl font-bold leading-none text-foreground">{isLoading ? '—' : item.value}</p>
             </div>
             <div className={cn('rounded-lg p-2.5', item.bg)}>
               <BookOpen size={16} className={item.color} />
@@ -188,8 +227,9 @@ const academicYearOptions = toOptions(yearsData?.data ?? [], (y) => y.name);
         exportConfig={{ fileName: 'classes' }}
       />
 
-      <AppModal open={createOpen} onClose={() => setCreateOpen(false)} title="Add New Class" size="md">
+      <AppModal open={createOpen} onClose={() => setCreateOpen(false)} title="Add New Class" size="lg">
         <ClassForm
+          defaultValues={createDefaults}
           onSubmit={(body) => {
             const payload = normalizeClassPayload(body, activeBranchId);
             if (!payload.name) {

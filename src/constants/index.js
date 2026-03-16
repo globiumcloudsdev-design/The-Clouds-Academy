@@ -181,6 +181,19 @@ export const SCHOOL_NAV = [
   { label: 'Settings',         href: '/settings',        icon: 'Settings',        permission: PERMISSIONS.SCHOOL_SETTINGS,       group: 'Admin' },
 ];
 
+// ── Nav items for Master Admin portal ───────────────────────────────────
+export const MASTER_ADMIN_NAV = [
+  { label: 'Dashboard',      href: '/master-admin',                        icon: 'LayoutDashboard', group: null },
+  { label: 'Institutes',     href: '/master-admin/schools',                icon: 'Building2',       group: null },
+  { label: 'Subscriptions',  href: '/master-admin/subscriptions',          icon: 'CreditCard',      group: null },
+  { label: 'Sub. Templates', href: '/master-admin/subscription-templates', icon: 'FileText',        group: null },
+  { label: 'Roles',          href: '/master-admin/roles',                  icon: 'ShieldCheck',     group: null },
+  { label: 'Users',          href: '/master-admin/users',                  icon: 'Users',           group: null },
+  { label: 'Bulk Emails',    href: '/master-admin/emails',                 icon: 'Mail',            group: null },
+  { label: 'Reports',        href: '/master-admin/reports',                icon: 'BarChart2',       group: null },
+  { label: 'Notifications',  href: '/master-admin/notifications',          icon: 'BellRing',        group: null },
+];
+
 // ── Gender options ────────────────────────────────────────────────────────
 export const GENDER_OPTIONS = [
   { value: 'male',   label: 'Male' },

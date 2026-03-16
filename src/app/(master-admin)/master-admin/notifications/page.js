@@ -212,7 +212,7 @@ export default function NotificationsPage() {
         action={
           <button
             onClick={() => setSendOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
           >
             <Send size={14} /> Send New
           </button>

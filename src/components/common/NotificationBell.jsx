@@ -16,15 +16,21 @@ import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import useUiStore from '@/store/uiStore';
 
+import { useRouter } from 'next/navigation';
+
 export default function NotificationBell({ onClick }) {
+  const router = useRouter();
   const unreadCount = useUiStore((s) => s.unreadCount);
+
+  const handleClick = onClick || (() => router.push('/master-admin/notifications'));
+
 
   return (
     <Button
       variant="ghost"
       size="icon"
       className="relative"
-      onClick={onClick}
+      onClick={handleClick}
       aria-label="Notifications"
     >
       <Bell size={18} />

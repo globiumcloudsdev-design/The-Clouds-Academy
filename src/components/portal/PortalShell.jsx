@@ -11,6 +11,8 @@ import {
   Briefcase, FileText, ClipboardList, NotebookPen, UserCheck, BookMarked,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import ThemeToggle from '@/components/common/ThemeToggle';
 import usePortalStore from '@/store/portalStore';
 import { getPortalTerms } from '@/constants/portalInstituteConfig';
 
@@ -162,7 +164,7 @@ export default function PortalShell({ children, type }) {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:flex-col w-60 bg-white border-r border-slate-200 flex-shrink-0">
         <SidebarContent />
@@ -181,38 +183,49 @@ export default function PortalShell({ children, type }) {
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Top navbar */}
-        <header className="bg-white border-b border-slate-200 px-4 h-14 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <button
-              className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-sm font-bold text-slate-900">
-                {navItems.find((n) => n.href === pathname)?.label || t.overviewLabel}
-              </h1>
-              <p className="text-xs text-slate-400 hidden sm:block">
-                {portalLabel} · The Clouds Academy
-              </p>
-            </div>
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-background/95 backdrop-blur px-4 flex-shrink-0 sm:px-6">
+          {/* Mobile hamburger */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+
+          {/* Page label */}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-muted-foreground truncate">
+              The Clouds Academy — {portalLabel}
+            </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className={`hidden sm:inline-flex text-xs font-semibold px-2.5 py-1 rounded-full ${themeClasses.badge}`}>
-              {isTeacher ? `👨‍🏫 ${t.teacherLabel}` : isParent ? '👨‍👩‍👧 Parent' : `🎓 ${t.studentLabel}`}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-slate-500 hover:text-red-600 hover:bg-red-50 gap-1.5 text-xs"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
+          {/* Right controls */}
+          <ThemeToggle />
+
+          <Separator orientation="vertical" className="h-6" />
+
+          {/* User pill */}
+          <div className="flex items-center gap-2 rounded-lg border px-2.5 py-1.5">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ${
+              isTeacher ? 'bg-blue-500' : isParent ? 'bg-indigo-500' : 'bg-emerald-500'
+            }`}>
+              {displayName[0]}
+            </div>
+            <span className="hidden sm:block text-sm font-medium max-w-[120px] truncate">{displayName}</span>
           </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            aria-label="Logout"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
         </header>
 
         {/* Page content */}

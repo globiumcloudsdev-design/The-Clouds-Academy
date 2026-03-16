@@ -19,6 +19,7 @@ import SelectField from '@/components/common/SelectField';
 import StatsCard from '@/components/common/StatsCard';
 import { cn } from '@/lib/utils';
 import { DUMMY_CLASSES } from '@/data/dummyData';
+import { teacherService } from '@/services';
 
 const STATUS_OPTS = [{ value:'active', label:'Active' }, { value:'inactive', label:'Inactive' }];
 
@@ -26,8 +27,29 @@ const schema = z.object({
   name:       z.string().min(1, 'Required'),
   capacity:   z.coerce.number().min(1, 'Required'),
   teacher_id: z.string().optional(),
+  section:    z.string().optional(),
   status:     z.string().min(1, 'Required'),
   description:z.string().optional(),
+});
+
+const normalizeClassRow = (row) => ({
+  ...row,
+  teacher_id: row.teacher_id ?? row.class_teacher_id ?? '',
+  teacher_name:
+    row.teacher_name ??
+    row.class_teacher_name ??
+    (typeof row.class_teacher === 'string' ? row.class_teacher : undefined) ??
+    row.class_teacher?.name ??
+    '—',
+  section: row.section ?? row.section_name ?? '',
+  sections:
+    row.sections ??
+    row.sections_count ??
+    row.section_count ??
+    (row.section ? 1 : 0),
+  status:
+    row.status ??
+    (row.is_active === false ? 'inactive' : 'active'),
 });
 
 
@@ -50,6 +72,18 @@ export default function ClassesPage({ type }) {
 
   const { register, handleSubmit, control, reset, formState: { errors } } = useForm({ resolver: zodResolver(schema), defaultValues: { status:'active', capacity: 40 } });
 
+  const { data: teachersData } = useQuery({
+    queryKey: ['class-teachers', type],
+    enabled: type === 'school',
+    queryFn: async () => {
+      try {
+        return await teacherService.getAll({ is_active: true, limit: 100 });
+      } catch {
+        return { data: [] };
+      }
+    },
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ['classes', type, page, pageSize, search, status],
     queryFn: async () => {
@@ -63,13 +97,32 @@ export default function ClassesPage({ type }) {
     placeholderData: (p) => p,
   });
 
-  const rows = data?.data?.rows ?? DUMMY_CLASSES;
+  const teacherOptions = useMemo(
+    () => (teachersData?.data?.rows ?? teachersData?.data ?? []).map((teacher) => ({
+      value: String(teacher.id),
+      label: `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() || teacher.employee_id || 'Unnamed',
+    })),
+    [teachersData],
+  );
+
+  const rows = useMemo(
+    () => (data?.data?.rows ?? DUMMY_CLASSES).map(normalizeClassRow),
+    [data],
+  );
   const total = data?.data?.total ?? rows.length;
   const totalPages = data?.data?.totalPages ?? 1;
 
   const save = useMutation({
     mutationFn: async (vals) => {
-      try { const { classService } = await import('@/services'); return editing ? await classService.update(editing.id, vals) : await classService.create(vals); }
+      const payload = {
+        ...vals,
+        teacher_id: vals.teacher_id || undefined,
+        class_teacher_id: vals.teacher_id || undefined,
+        section: vals.section?.trim() || undefined,
+        is_active: vals.status === 'active',
+      };
+
+      try { const { classService } = await import('@/services'); return editing ? await classService.update(editing.id, payload) : await classService.create(payload); }
       catch { return { data: vals }; }
     },
     onSuccess: () => { toast.success(editing ? 'Updated' : 'Created'); qc.invalidateQueries({ queryKey: ['classes'] }); closeModal(); },
@@ -85,13 +138,14 @@ export default function ClassesPage({ type }) {
     onError: () => toast.error('Delete failed'),
   });
 
-  const openAdd  = () => { setEditing(null); reset({ status:'active', capacity: 40 }); setModal(true); };
-  const openEdit = (row) => { setEditing(row); reset({ ...row }); setModal(true); };
+  const openAdd  = () => { setEditing(null); reset({ status:'active', capacity: 40, teacher_id: '', section: '' }); setModal(true); };
+  const openEdit = (row) => { setEditing(row); reset({ ...normalizeClassRow(row) }); setModal(true); };
   const closeModal = () => { setModal(false); setEditing(null); reset(); };
 
   const columns = useMemo(() => [
     { accessorKey: 'name',         header: `${label} Name`,  cell: ({ getValue }) => <span className="font-semibold">{getValue()}</span> },
     { accessorKey: 'teacher_name', header: 'Class Teacher',  cell: ({ getValue }) => getValue() || '—' },
+    { accessorKey: 'section',      header: 'Section',        cell: ({ getValue }) => getValue() || '—' },
     { accessorKey: 'capacity',     header: 'Capacity' },
     { accessorKey: 'sections',     header: type === 'school' ? 'Sections' : 'Batches', cell: ({ getValue }) => getValue() ?? 0 },
     { accessorKey: 'status', header: 'Status', cell: ({ getValue }) => <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium capitalize', getValue() === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>{getValue()}</span> },
@@ -123,6 +177,12 @@ export default function ClassesPage({ type }) {
         footer={<><button type="button" onClick={closeModal} className="rounded-md border px-4 py-2 text-sm hover:bg-accent">Cancel</button><button type="submit" form="class-form" disabled={save.isPending} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60">{save.isPending ? 'Saving…' : editing ? 'Update' : 'Create'}</button></>}>
         <form id="class-form" onSubmit={handleSubmit((v) => save.mutate(v))} className="space-y-4">
           <div className="space-y-1.5"><label className="text-sm font-medium">{label} Name *</label><input {...register('name')} className="input-base" placeholder={`e.g. ${label} 9`} />{errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}</div>
+          {type === 'school' && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5"><label className="text-sm font-medium">Section</label><input {...register('section')} className="input-base" placeholder="e.g. A" /></div>
+              <SelectField label="Class Teacher" name="teacher_id" control={control} error={errors.teacher_id} options={teacherOptions} placeholder={teacherOptions.length ? 'Select class teacher' : 'No teacher available'} />
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5"><label className="text-sm font-medium">Capacity *</label><input type="number" {...register('capacity')} className="input-base" />{errors.capacity && <p className="text-xs text-destructive">{errors.capacity.message}</p>}</div>
             <SelectField label="Status" name="status" control={control} error={errors.status} options={STATUS_OPTS} required />

@@ -19,7 +19,7 @@
 import api from '@/lib/api';
 import { buildQuery } from '@/lib/utils';
 import { withFallback } from '@/lib/withFallback';
-import { DUMMY_CLASSES, paginate } from '@/data/dummyData';
+import { DUMMY_CLASSES, DUMMY_FLAT_TEACHERS, paginate } from '@/data/dummyData';
 
 let fallbackClasses = [...DUMMY_CLASSES];
 
@@ -28,6 +28,12 @@ const normalizeBoolFilter = (value) => {
   if (value === true || value === 'true') return true;
   if (value === false || value === 'false') return false;
   return null;
+};
+
+const resolveTeacherName = (teacherId) => {
+  if (!teacherId) return null;
+  const teacher = DUMMY_FLAT_TEACHERS.find((item) => String(item.id) === String(teacherId));
+  return teacher ? `${teacher.first_name || ''} ${teacher.last_name || ''}`.trim() : null;
 };
 
 export const classService = {
@@ -67,9 +73,13 @@ export const classService = {
           academic_year_id: body.academic_year_id,
           branch_id: body.branch_id,
           class_teacher_id: body.class_teacher_id,
-          sections: [],
+          class_teacher: resolveTeacherName(body.class_teacher_id),
+          section: body.section ?? '',
+          capacity: body.capacity ?? null,
+          sections: body.section ? [{ id: `section-${Date.now()}`, name: body.section }] : [],
+          sections_count: body.section ? 1 : 0,
           student_count: 0,
-          is_active: true,
+          is_active: body.is_active !== false,
         };
         fallbackClasses = [created, ...fallbackClasses];
         return { data: created };
@@ -80,7 +90,20 @@ export const classService = {
     withFallback(
       () => api.put(`/classes/${id}`, body).then((r) => r.data),
       () => {
-        fallbackClasses = fallbackClasses.map((c) => (c.id === id ? { ...c, ...body } : c));
+        fallbackClasses = fallbackClasses.map((current) => {
+          if (current.id !== id) return current;
+
+          const nextSection = body.section ?? current.section ?? '';
+          return {
+            ...current,
+            ...body,
+            class_teacher: body.class_teacher_id ? resolveTeacherName(body.class_teacher_id) : current.class_teacher,
+            section: nextSection,
+            capacity: body.capacity ?? current.capacity ?? null,
+            sections_count: nextSection ? Math.max(current.sections_count ?? current.sections?.length ?? 0, 1) : (current.sections_count ?? current.sections?.length ?? 0),
+            sections: nextSection ? (current.sections?.length ? current.sections : [{ id: `section-${id}`, name: nextSection }]) : (current.sections ?? []),
+          };
+        });
         return { data: fallbackClasses.find((c) => c.id === id) ?? { id, ...body } };
       },
     ),

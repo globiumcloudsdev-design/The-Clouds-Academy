@@ -236,9 +236,10 @@ export default function DataTable({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__all__">All {f.label}</SelectItem>
-                        {f.options.map((opt) => (
+{f.options.filter(opt => opt.value != null && opt.value !== '').map((opt) => (
                           <SelectItem key={opt.value} value={String(opt.value)}>
                             {opt.label}
+
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -274,9 +275,10 @@ export default function DataTable({
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="__all__">All {f.label}</SelectItem>
-                              {f.options.map((opt) => (
+{f.options.filter(opt => opt.value != null && opt.value !== '').map((opt) => (
                                 <SelectItem key={opt.value} value={String(opt.value)}>
                                   {opt.label}
+
                                 </SelectItem>
                               ))}
                             </SelectContent>

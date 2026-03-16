@@ -1,23 +1,26 @@
 /**
- * School portal sidebar
- * Reads SCHOOL_NAV from constants and filters items based on user permissions.
- * Supports group headings via item.group property.
+ * Unified sidebar — school portal or master-admin portal.
+ * Automatically switches nav list based on the logged-in user's role.
  */
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Users, GraduationCap, BookOpen, BookMarked,
   ClipboardList, CalendarCheck, FileText, DollarSign,
   Settings, ShieldCheck, Calendar, CalendarDays, X, CreditCard,
   UserCog, GitBranch, Layers, Bell, BarChart2, FlaskConical,
+  Building2, Mail, BellRing, LogOut,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import Cookies from 'js-cookie';
 
-import { SCHOOL_NAV } from '@/constants';
+import { SCHOOL_NAV, MASTER_ADMIN_NAV } from '@/constants';
 import useAuthStore from '@/store/authStore';
 import useUiStore from '@/store/uiStore';
+import { authService } from '@/services';
 import { cn } from '@/lib/utils';
 
 const ICON_MAP = {
@@ -25,29 +28,40 @@ const ICON_MAP = {
   ClipboardList, CalendarCheck, CalendarDays, FileText, DollarSign,
   Settings, ShieldCheck, Calendar, CreditCard, UserCog, GitBranch,
   Layers, Bell, BarChart2, FlaskConical,
+  Building2, Mail, BellRing,
 };
 
 export default function Sidebar() {
   const pathname      = usePathname();
+  const router        = useRouter();
   const isMaster      = useAuthStore((s) => s.isMasterAdmin());
   const canDo         = useAuthStore((s) => s.canDo);
   const roleCode      = useAuthStore((s) => s.user?.role_code);
+  const logout        = useAuthStore((s) => s.logout);
   const sidebarOpen   = useUiStore((s) => s.sidebarOpen);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
 
-  // Before mount: show all nav items so SSR and initial hydration match.
-  // After mount: filter by permissions (Zustand store is hydrated from localStorage by now).
-  const visibleItems = !mounted
-    ? SCHOOL_NAV
-    : SCHOOL_NAV.filter((item) => {
-        if (!item.permission) return true;           // always visible (Dashboard)
-        if (isMaster) return true;                   // Master Admin sees everything
-        if (item.hideForRoles?.includes(roleCode)) return false;
-        return canDo(item.permission);
-      });
+  const handleLogout = async () => {
+    try { await authService.logout(); } catch (_) {}
+    logout();
+    Cookies.remove('role_code');
+    router.replace('/login');
+    toast.success('Logged out');
+  };
+
+  // Master admin always sees all master admin nav items
+  const visibleItems = isMaster
+    ? MASTER_ADMIN_NAV
+    : !mounted
+      ? SCHOOL_NAV
+      : SCHOOL_NAV.filter((item) => {
+          if (!item.permission) return true;
+          if (item.hideForRoles?.includes(roleCode)) return false;
+          return canDo(item.permission);
+        });
 
   // Group items by their `group` property preserving insert order
   const grouped = visibleItems.reduce((acc, item) => {
@@ -76,7 +90,9 @@ export default function Sidebar() {
       >
         {/* Logo + Close button (mobile only) */}
         <div className="flex h-16 items-center justify-between border-b border-white/10 px-5">
-          <span className="text-lg font-bold">☁ Clouds Academy</span>
+          <span className="text-lg font-bold">
+            {isMaster ? '☁ Master Admin' : '☁ Clouds Academy'}
+          </span>
           <button
             onClick={toggleSidebar}
             className="rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white md:hidden"
@@ -87,7 +103,7 @@ export default function Sidebar() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5" aria-label="Main navigation">
           {Object.entries(grouped).map(([group, items]) => (
             <div key={group} className="mb-1">
               {/* Group label — skip for ungrouped (null group) items */}
@@ -121,6 +137,19 @@ export default function Sidebar() {
             </div>
           ))}
         </nav>
+
+        {/* Logout — shown at bottom of sidebar for master admin */}
+        {isMaster && (
+          <div className="border-t border-white/10 p-3">
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <LogOut size={16} />
+              Logout
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );
