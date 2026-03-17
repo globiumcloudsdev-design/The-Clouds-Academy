@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { notificationService } from '@/services';
 import { PageHeader, DataTable, StatsCard, TableRowActions, ConfirmDialog, StatusBadge } from '@/components/common';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/router';
 
 const fmtDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
@@ -46,7 +45,7 @@ function ReadStatusBadge({ isRead }) {
   );
 }
 
-function buildColumns(onMarkRead, onDelete, router) {
+function buildColumns(onMarkRead, onDelete) {
   return [
     {
       accessorKey: 'type',
@@ -97,7 +96,6 @@ function buildColumns(onMarkRead, onDelete, router) {
 }
 
 export default function NotificationsPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
@@ -159,10 +157,9 @@ export default function NotificationsPage() {
   const columns = useMemo(
     () => buildColumns(
       (id) => markReadMutation.mutate({ id }),
-      setDeleteTarget,
-      router
+      setDeleteTarget
     ),
-    [markReadMutation, router]
+    [markReadMutation]
   );
 
   const readOptions = [
