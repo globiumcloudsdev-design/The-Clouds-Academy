@@ -12,7 +12,7 @@ import { Sparkles, Eye, EyeOff, Users, GraduationCap, BookOpen, Briefcase, Shiel
 import { authService } from '@/services';
 import useAuthStore from '@/store/authStore';
 import usePortalStore from '@/store/portalStore';
-import { DUMMY_USERS, INSTITUTE_TYPES } from '@/data/dummyData';
+import { DUMMY_USERS, DUMMY_INSTITUTES, INSTITUTE_TYPES } from '@/data/dummyData';
 import { dummyPortalLogin, PORTAL_DEMO_ACCOUNTS } from '@/data/portalDummyData';
 
 // Login types
@@ -109,6 +109,26 @@ function resolveUserMeta(user, isPortal = false) {
   return { colors, badge, typeDef };
 }
 
+function getStaffInstituteName(user) {
+  if (user?.school?.name) return user.school.name;
+
+  const byId = DUMMY_INSTITUTES.find((inst) => inst.id === user?.institute_id);
+  if (byId?.name) return byId.name;
+
+  const byCode = DUMMY_INSTITUTES.find((inst) => inst.code === user?.institute_code || inst.code === user?.school_code);
+  if (byCode?.name) return byCode.name;
+
+  return 'Unknown Institute';
+}
+
+function getPortalInstituteName(account) {
+  const byType = DUMMY_INSTITUTES.find((inst) => inst.institute_type === account?.institute_type);
+  if (byType?.name) return byType.name;
+
+  const typeDef = INSTITUTE_TYPES.find((t) => t.value === account?.institute_type);
+  return typeDef?.label ? `${typeDef.label} Institute` : 'Portal Institute';
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
@@ -133,6 +153,10 @@ export default function LoginPage() {
   const switchLoginType = (type) => {
     setLoginType(type);
     reset();
+  };
+
+  const handlePortalQuickLogin = () => {
+    router.push('/portal-login');
   };
 
   // Get dashboard path based on user role
@@ -319,6 +343,38 @@ export default function LoginPage() {
 
           {/* Form Card */}
           <div className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-2xl shadow-slate-200/70 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/85 dark:shadow-slate-950/40 sm:p-8">
+            <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50/80 p-3 dark:border-blue-900/40 dark:bg-blue-950/30">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                Login As
+              </p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={handlePortalQuickLogin}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-blue-900/30"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Student
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePortalQuickLogin}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-blue-900/30"
+                >
+                  <Briefcase className="h-3.5 w-3.5" />
+                  Teacher
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePortalQuickLogin}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-blue-900/30"
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  Parent
+                </button>
+              </div>
+            </div>
+
             {/* Header */}
             <div className="mb-6 text-center">
               {/* <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
@@ -494,6 +550,7 @@ export default function LoginPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {DUMMY_USERS.slice(0, 4).map((user) => {
                     const { colors, badge } = resolveUserMeta(user, false);
+                    const instituteName = getStaffInstituteName(user);
                     return (
                       <button
                         key={user.id}
@@ -524,9 +581,14 @@ export default function LoginPage() {
                           </div>
                         </div>
                         <div className="mt-2 w-full border-t border-slate-200 dark:border-slate-700 pt-2">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${colors.bg}`}>
-                            {badge}
-                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${colors.bg}`}>
+                              {badge}
+                            </span>
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                              {instituteName}
+                            </span>
+                          </div>
                         </div>
                       </button>
                     );
@@ -542,6 +604,7 @@ export default function LoginPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {PORTAL_DEMO_ACCOUNTS.slice(0, 4).map((user) => {
                     const { colors, badge } = resolveUserMeta({ portal_type: user.role }, true);
+                    const instituteName = getPortalInstituteName(user);
                     return (
                       <button
                         key={user.email}
@@ -568,9 +631,14 @@ export default function LoginPage() {
                           </div>
                         </div>
                         <div className="mt-2 w-full border-t border-slate-200 dark:border-slate-700 pt-2">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${colors.bg}`}>
-                            {badge}
-                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${colors.bg}`}>
+                              {badge}
+                            </span>
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                              {instituteName}
+                            </span>
+                          </div>
                         </div>
                       </button>
                     );

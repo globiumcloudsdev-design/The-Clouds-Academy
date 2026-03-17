@@ -2052,19 +2052,19 @@ export const DUMMY_ROLES = [
 // ──────────────────────────────────────────────────────────────────────────────
 export const DUMMY_USERS = [
   // Master Admin
-  {
-    id: 'user-master-001',
-    first_name: 'Zahid',
-    last_name: 'Ali Khan',
-    email: 'master@cloudsacademy.com',
-    password: 'master@123',
-    role_code: 'MASTER_ADMIN',
-    role: DUMMY_ROLES[0],
-    institute_id: null,
-    institute_code: 'MASTER',
-    is_active: true,
-    permissions: ALL_PERMISSIONS
-  },
+  // {
+  //   id: 'user-master-001',
+  //   first_name: 'Zahid',
+  //   last_name: 'Ali Khan',
+  //   email: 'master@cloudsacademy.com',
+  //   password: 'master@123',
+  //   role_code: 'MASTER_ADMIN',
+  //   role: DUMMY_ROLES[0],
+  //   institute_id: null,
+  //   institute_code: 'MASTER',
+  //   is_active: true,
+  //   permissions: ALL_PERMISSIONS
+  // },
 
   // School Users
   {
@@ -2092,20 +2092,7 @@ export const DUMMY_USERS = [
     institute_code: 'TCA-SCH',
     is_active: true
   },
-  {
-    id: 'user-sch-003',
-    first_name: 'Hassan',
-    last_name: 'Mahmood',
-    email: 'teacher.sch@tcaschool.edu.pk',
-    password: 'teacher@123',
-    role_code: 'CLASS_TEACHER',
-    role: DUMMY_ROLES.find(r => r.code === 'CLASS_TEACHER'),
-    institute_id: 'inst-001',
-    institute_code: 'TCA-SCH',
-    is_active: true
-  },
-
-  // Coaching Users
+    // Coaching Users
   {
     id: 'user-coach-001',
     first_name: 'Khalid',
@@ -2118,6 +2105,19 @@ export const DUMMY_USERS = [
     institute_code: 'SCC-LHR',
     is_active: true
   },
+  // {
+  //   id: 'user-sch-003',
+  //   first_name: 'Hassan',
+  //   last_name: 'Mahmood',
+  //   email: 'teacher.sch@tcaschool.edu.pk',
+  //   password: 'teacher@123',
+  //   role_code: 'CLASS_TEACHER',
+  //   role: DUMMY_ROLES.find(r => r.code === 'CLASS_TEACHER'),
+  //   institute_id: 'inst-001',
+  //   institute_code: 'TCA-SCH',
+  //   is_active: true
+  // },
+
   {
     id: 'user-coach-002',
     first_name: 'Naila',
